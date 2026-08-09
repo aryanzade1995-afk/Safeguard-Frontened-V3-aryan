@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import {
   Shield,
@@ -21,19 +21,89 @@ import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
 import { AIInsight } from '../components/common/AIInsight';
 import { BackButton } from '../components/common/BackButton';
+import { getMyAssessments, deleteAssessment } from '../services/assessmentService';
+import { SIGNAL_META, SIGNAL_ORDER, SEVERITY_BADGE } from '../services/signalMeta';
+import { Assessment } from '../types';
 
 export const Results: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { wipeAllData, questionnaireAnswers, isDemoMode, resetDemo, calculatedScore } = useSafeguard();
+  const { wipeAllData, questionnaireAnswers, isDemoMode, resetDemo, user } = useSafeguard();
 
-  // Calculated active signal level (Low, Moderate, Higher) based automatically on questionnaire & financial responses
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [loadingAssessment, setLoadingAssessment] = useState(true);
+
+  useEffect(() => {
+    // RequireAuth only renders this page once a user is signed in, but stay
+    // defensive in case that ever changes.
+    if (!user) {
+      setLoadingAssessment(false);
+      return;
+    }
+
+    let isMounted = true;
+    getMyAssessments()
+      .then((assessments) => {
+        if (!isMounted) return;
+        if (assessments.length === 0) {
+          addToast({
+            title: 'No Assessment Found',
+            description: 'Please complete the private reflection questionnaire first.',
+            type: 'warning',
+          });
+          navigate('/questionnaire');
+          return;
+        }
+        setAssessment(assessments[0]);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        addToast({
+          title: 'Could Not Load Your Assessment',
+          description: err instanceof Error ? err.message : 'Please try again.',
+          type: 'warning',
+        });
+        navigate('/questionnaire');
+      })
+      .finally(() => {
+        if (isMounted) setLoadingAssessment(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Active signal level (Low, Moderate, Higher) driven by the real backend risk assessment.
+  // Computed before any early return so hook order stays stable across renders.
   const activeSignal: 'Low' | 'Moderate' | 'Higher' = React.useMemo(() => {
-    const level = calculatedScore.vulnerabilityLevel;
+    const level = assessment?.analysis.risk.level;
     if (level === 'elevated' || level === 'high') return 'Higher';
     if (level === 'moderate') return 'Moderate';
     return 'Low';
-  }, [calculatedScore.vulnerabilityLevel]);
+  }, [assessment]);
+
+  if (loadingAssessment) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-4 text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm animate-pulse">
+          <Info className="w-8 h-8" />
+        </div>
+        <p className="text-sm text-slate-500 font-medium">Loading your assessment...</p>
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return null;
+  }
+
+  const { analysis } = assessment;
+
+  const detectedSignals = SIGNAL_ORDER.map((key) => [key, analysis.signals[key]] as const).filter(
+    ([, signal]) => signal.detected
+  );
 
   const handleSaveResults = () => {
     const reportText = `SAFEGUARD FINANCIAL AUTONOMY OVERVIEW
@@ -96,16 +166,29 @@ Generated locally via Safeguard. Zero data saved on external servers.`;
     navigate('/assessment');
   };
 
-  const handleDeleteData = () => {
-    if (window.confirm('Are you sure you want to delete all local assessment data and reset session state?')) {
-      wipeAllData();
-      addToast({
-        title: 'Assessment Data Deleted',
-        description: 'All local questionnaire answers and financial entries have been cleared.',
-        type: 'info',
-      });
-      navigate('/');
+  const handleDeleteData = async () => {
+    if (!window.confirm('Are you sure you want to delete this assessment and reset session state?')) {
+      return;
     }
+
+    try {
+      await deleteAssessment(assessment.id);
+    } catch (err) {
+      addToast({
+        title: 'Could Not Delete Saved Assessment',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    wipeAllData();
+    addToast({
+      title: 'Assessment Data Deleted',
+      description: 'Your saved assessment and local questionnaire answers have been cleared.',
+      type: 'info',
+    });
+    navigate('/');
   };
 
   return (
@@ -166,7 +249,9 @@ Generated locally via Safeguard. Zero data saved on external servers.`;
               <span>Informational Signal</span>
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              Calculated from provided inputs
+              {`Calculated from provided inputs — risk score ${analysis.risk.rawScore}/${analysis.risk.maxScore} (${Math.round(
+                analysis.risk.normalizedScore * 100
+              )}%)`}
             </span>
           </div>
 
@@ -242,142 +327,62 @@ Generated locally via Safeguard. Zero data saved on external servers.`;
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-[#1A1A1A]">Assessment Breakdown</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* CARD 1: Financial access */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
-                  Domain 01
-                </span>
-                <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 text-[11px] font-bold rounded-full">
-                  Signal Observed
-                </span>
-              </div>
+        {detectedSignals.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {detectedSignals.map(([key, signal], index) => {
+              const meta = SIGNAL_META[key];
+              const badge = SEVERITY_BADGE[signal.severity];
+              return (
+                <div
+                  key={key}
+                  className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
+                        {`Domain ${String(index + 1).padStart(2, '0')}`}
+                      </span>
+                      <span className={badge.className}>{badge.label}</span>
+                    </div>
 
-              <h4 className="text-base font-bold text-slate-900">Financial access</h4>
+                    <h4 className="text-base font-bold text-slate-900">{meta.title}</h4>
 
-              <div className="space-y-2">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Observation
-                  </span>
-                  <p className="text-xs text-slate-800 font-medium leading-relaxed mt-0.5">
-                    Your responses indicate that access to money may sometimes be limited.
-                  </p>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+                          Observation
+                        </span>
+                        <p className="text-xs text-slate-800 font-medium leading-relaxed mt-0.5">
+                          {signal.evidence || 'This pattern was identified from your responses.'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+                          Context
+                        </span>
+                        <p className="text-xs text-slate-600 leading-relaxed mt-0.5">{meta.context}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#EDECE8]">
+                    <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide block">
+                      Neutral Recommendation
+                    </span>
+                    <p className="text-xs text-slate-700 font-medium mt-0.5">{meta.recommendation}</p>
+                  </div>
                 </div>
-
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Context
-                  </span>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
-                    Having reliable access to personal liquidity ensures independence in daily living expenses.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-[#EDECE8]">
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide block">
-                Neutral Recommendation
-              </span>
-              <p className="text-xs text-slate-700 font-medium mt-0.5">
-                Consider establishing small personal reserves accessible in your own name.
-              </p>
-            </div>
+              );
+            })}
           </div>
-
-          {/* CARD 2: Financial decision-making */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
-                  Domain 02
-                </span>
-                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full">
-                  Review Suggested
-                </span>
-              </div>
-
-              <h4 className="text-base font-bold text-slate-900">Financial decision-making</h4>
-
-              <div className="space-y-2">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Observation
-                  </span>
-                  <p className="text-xs text-slate-800 font-medium leading-relaxed mt-0.5">
-                    You indicated that you may not always have complete control over financial decisions.
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Context
-                  </span>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
-                    Equal partnerships foster shared decision-making without unilateral pressure.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-[#EDECE8]">
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide block">
-                Neutral Recommendation
-              </span>
-              <p className="text-xs text-slate-700 font-medium mt-0.5">
-                Reflect on choices where you would prefer greater individual autonomy.
-              </p>
-            </div>
+        ) : (
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs">
+            <p className="text-sm text-slate-600 leading-relaxed">
+              No specific patterns were identified from your responses.
+            </p>
           </div>
-
-          {/* CARD 3: Transaction patterns */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
-                  Domain 03
-                </span>
-                <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full">
-                  Pattern Pattern
-                </span>
-              </div>
-
-              <h4 className="text-base font-bold text-slate-900">Transaction patterns</h4>
-
-              <div className="space-y-2">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Observation
-                  </span>
-                  <p className="text-xs text-slate-800 font-medium leading-relaxed mt-0.5">
-                    Several unusual withdrawal patterns were identified in the optional financial data.
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                    Context
-                  </span>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
-                    Cash movements are common but reduce clear transaction visibility over time.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-[#EDECE8]">
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide block">
-                Neutral Recommendation
-              </span>
-              <p className="text-xs text-slate-700 font-medium mt-0.5">
-                Periodically review bank statements to track recurring outflows.
-              </p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* AI EXPLANATION */}

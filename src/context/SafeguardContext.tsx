@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import {
   FinancialPattern,
   Transaction,
@@ -10,6 +11,22 @@ import {
   DEMO_PATTERNS,
   DEMO_QUESTIONNAIRE_ANSWERS,
 } from '../data/demoData';
+import { supabase } from '../services/supabaseClient';
+
+export interface AuthResult {
+  success: boolean;
+  error?: string;
+  needsEmailConfirmation?: boolean;
+}
+
+// Supabase surfaces raw network/browser errors (e.g. "Failed to fetch") as-is;
+// translate the common ones into something a user can act on.
+const friendlyAuthError = (message: string): string => {
+  if (/failed to fetch|network/i.test(message)) {
+    return 'Unable to reach the authentication service. Please check your connection and try again.';
+  }
+  return message;
+};
 
 // Default initial mock patterns (non-diagnostic, reflective)
 const INITIAL_PATTERNS: FinancialPattern[] = [
@@ -130,14 +147,23 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  avatarUrl: string | null;
+  emailConfirmed: boolean;
+  hasPasswordAuth: boolean;
 }
 
 interface SafeguardContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password?: string) => { success: boolean; error?: string };
-  signup: (email: string, password?: string, name?: string) => { success: boolean; error?: string };
-  logout: () => void;
+  authLoading: boolean;
+  signUpWithPassword: (email: string, password: string, fullName?: string) => Promise<AuthResult>;
+  signInWithPassword: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
+  requestPasswordReset: (email: string) => Promise<AuthResult>;
+  updatePassword: (newPassword: string) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  signOutEverywhere: () => Promise<AuthResult>;
+  updateFullName: (fullName: string) => Promise<AuthResult>;
   showAuthModal: boolean;
   authModalTab: 'login' | 'signup';
   openAuthModal: (tab?: 'login' | 'signup', redirectTarget?: string) => void;
@@ -180,10 +206,72 @@ const DEFAULT_SETTINGS: UserSettings = {
 const SafeguardContext = createContext<SafeguardContextType | undefined>(undefined);
 
 export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('safeguard_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // Auth state is sourced entirely from Supabase (session + profiles table),
+  // never persisted manually — supabase-js already persists the session in
+  // localStorage under its own key and keeps it fresh.
+  const [session, setSession] = useState<Session | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', userId)
+      .maybeSingle();
+    if (!error) {
+      const row = data as { full_name: string | null; avatar_url: string | null } | null;
+      setProfileName(row?.full_name || null);
+      setProfileAvatarUrl(row?.avatar_url || null);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      setSession(data.session);
+      if (data.session?.user) {
+        fetchProfile(data.session.user.id);
+      }
+      setAuthLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        fetchProfile(newSession.user.id);
+      } else {
+        setProfileName(null);
+        setProfileAvatarUrl(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const user: User | null = session?.user
+    ? (() => {
+        const appMetadata = session.user.app_metadata as { provider?: string; providers?: string[] };
+        const userMetadata = session.user.user_metadata as { avatar_url?: string; picture?: string };
+        const hasPasswordAuth = appMetadata.providers
+          ? appMetadata.providers.includes('email')
+          : appMetadata.provider === 'email';
+        return {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: profileName || (session.user.email ? session.user.email.split('@')[0] : 'Account'),
+          avatarUrl: profileAvatarUrl || userMetadata.avatar_url || userMetadata.picture || null,
+          emailConfirmed: Boolean(session.user.email_confirmed_at),
+          hasPasswordAuth,
+        };
+      })()
+    : null;
 
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'login' | 'signup'>('login');
@@ -201,78 +289,149 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setShowAuthModal(false);
   };
 
-  const login = (email: string, password?: string) => {
-    if (!email || !email.includes('@')) {
+  const MIN_PASSWORD_LENGTH = 6;
+
+  const signUpWithPassword = async (
+    email: string,
+    password: string,
+    fullName?: string
+  ): Promise<AuthResult> => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
-    const savedUsers = localStorage.getItem('safeguard_users_db');
-    const usersList: Array<{ id: string; email: string; name: string; password?: string }> = savedUsers
-      ? JSON.parse(savedUsers)
-      : [{ id: 'usr-demo', email: 'user@example.com', name: 'Demo User', password: 'password123' }];
+    if (!password || password.length < MIN_PASSWORD_LENGTH) {
+      return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.` };
+    }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const foundUser = usersList.find((u) => u.email.toLowerCase() === normalizedEmail);
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: fullName?.trim() ? { full_name: fullName.trim() } : undefined,
+      },
+    });
 
-    if (foundUser) {
-      if (password && foundUser.password && foundUser.password !== password) {
-        return { success: false, error: 'Incorrect password. Please try again.' };
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+
+    if (data.session) {
+      setSession(data.session);
+      if (data.session.user) {
+        await fetchProfile(data.session.user.id);
       }
-      const loggedUser: User = {
-        id: foundUser.id,
-        email: foundUser.email,
-        name: foundUser.name,
-      };
-      setUser(loggedUser);
-      localStorage.setItem('safeguard_current_user', JSON.stringify(loggedUser));
       return { success: true };
     }
 
-    // If not found in database, allow auto-creating account on login or returning user
-    const newUser: User = {
-      id: 'usr-' + Date.now(),
-      email: normalizedEmail,
-      name: normalizedEmail.split('@')[0],
-    };
-    usersList.push({ ...newUser, password: password || 'password' });
-    localStorage.setItem('safeguard_users_db', JSON.stringify(usersList));
-    setUser(newUser);
-    localStorage.setItem('safeguard_current_user', JSON.stringify(newUser));
-    return { success: true };
+    // Email confirmation is required before Supabase issues a session.
+    return { success: true, needsEmailConfirmation: true };
   };
 
-  const signup = (email: string, password?: string, name?: string) => {
-    if (!email || !email.includes('@')) {
+  const signInWithPassword = async (email: string, password: string): Promise<AuthResult> => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
-    if (password && password.length < 4) {
-      return { success: false, error: 'Password must be at least 4 characters long.' };
-    }
-    const savedUsers = localStorage.getItem('safeguard_users_db');
-    const usersList: Array<{ id: string; email: string; name: string; password?: string }> = savedUsers
-      ? JSON.parse(savedUsers)
-      : [];
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const existing = usersList.find((u) => u.email.toLowerCase() === normalizedEmail);
-    if (existing) {
-      return { success: false, error: 'An account with this email already exists. Please log in instead.' };
+    if (!password) {
+      return { success: false, error: 'Please enter your password.' };
     }
 
-    const newUser: User = {
-      id: 'usr-' + Date.now(),
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
-      name: name?.trim() || normalizedEmail.split('@')[0],
-    };
-    usersList.push({ ...newUser, password: password || 'password' });
-    localStorage.setItem('safeguard_users_db', JSON.stringify(usersList));
-    setUser(newUser);
-    localStorage.setItem('safeguard_current_user', JSON.stringify(newUser));
+      password,
+    });
+
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+
+    setSession(data.session);
+    if (data.session?.user) {
+      await fetchProfile(data.session.user.id);
+    }
     return { success: true };
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('safeguard_current_user');
+  const signInWithGoogle = async (): Promise<AuthResult> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+
+    // The browser is now navigating to Google — the session is picked up by
+    // the onAuthStateChange listener once it redirects back into the app.
+    return { success: true };
+  };
+
+  const requestPasswordReset = async (email: string): Promise<AuthResult> => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+    return { success: true };
+  };
+
+  const updatePassword = async (newPassword: string): Promise<AuthResult> => {
+    if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+      return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.` };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+    return { success: true };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setProfileName(null);
+    setProfileAvatarUrl(null);
+  };
+
+  const signOutEverywhere = async (): Promise<AuthResult> => {
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+    setSession(null);
+    setProfileName(null);
+    setProfileAvatarUrl(null);
+    return { success: true };
+  };
+
+  const updateFullName = async (fullName: string): Promise<AuthResult> => {
+    if (!session?.user) {
+      return { success: false, error: 'You must be signed in to update your profile.' };
+    }
+    const trimmed = fullName.trim();
+    const { error } = await supabase.from('profiles').upsert({
+      id: session.user.id,
+      email: session.user.email,
+      full_name: trimmed,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      return { success: false, error: friendlyAuthError(error.message) };
+    }
+    setProfileName(trimmed || null);
+    return { success: true };
   };
 
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -391,9 +550,15 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     window.location.href = settings.quickExitUrl || 'https://www.weather.com';
   };
 
+  // Clears only Safeguard's own local app data (assessment answers, transactions,
+  // preferences, cached analysis) — never the Supabase session, which lives under
+  // its own storage key and is managed exclusively via sign-out.
   const wipeAllData = () => {
-    localStorage.clear();
-    setUser(null);
+    localStorage.removeItem('safeguard_transactions');
+    localStorage.removeItem('safeguard_questionnaire');
+    localStorage.removeItem('safeguard_assessment');
+    localStorage.removeItem('safeguard_settings');
+    localStorage.removeItem('safeguard_is_demo');
     setIsDemoMode(false);
     setTransactions(INITIAL_TRANSACTIONS);
     setQuestionnaireAnswers({});
@@ -453,9 +618,15 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       value={{
         user,
         isAuthenticated: Boolean(user),
-        login,
-        signup,
+        authLoading,
+        signUpWithPassword,
+        signInWithPassword,
+        signInWithGoogle,
+        requestPasswordReset,
+        updatePassword,
         logout,
+        signOutEverywhere,
+        updateFullName,
         showAuthModal,
         authModalTab,
         openAuthModal,

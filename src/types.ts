@@ -71,3 +71,57 @@ export interface ToastMessage {
   description?: string;
   type?: 'default' | 'success' | 'warning' | 'info' | 'danger';
 }
+
+// Backend /api/analyze contract (see backend/src/types.ts)
+export type AnalysisSeverity = 'none' | 'low' | 'medium' | 'high';
+
+export type AnalysisSignalKey =
+  | 'income_control'
+  | 'financial_decision_control'
+  | 'forced_transfers'
+  | 'debt_pressure'
+  | 'financial_surveillance'
+  | 'economic_dependence';
+
+export interface AnalysisSignal {
+  detected: boolean;
+  severity: AnalysisSeverity;
+  evidence: string;
+}
+
+export type AnalysisSignals = Record<AnalysisSignalKey, AnalysisSignal>;
+
+export type AnalysisRiskLevel = 'low' | 'moderate' | 'elevated' | 'high';
+
+export interface AnalysisRisk {
+  rawScore: number;
+  maxScore: number;
+  normalizedScore: number;
+  level: AnalysisRiskLevel;
+}
+
+export interface Analysis {
+  signals: AnalysisSignals;
+  risk: AnalysisRisk;
+}
+
+export interface AnalyzeSuccessResponse {
+  success: true;
+  analysis: Analysis;
+}
+
+export interface AnalyzeErrorResponse {
+  success: false;
+  error: string;
+}
+
+export type AnalyzeResponse = AnalyzeSuccessResponse | AnalyzeErrorResponse;
+
+// Supabase `assessments` row (see supabase/schema.sql)
+export interface Assessment {
+  id: string;
+  userId: string;
+  answers: Record<string, string>;
+  analysis: Analysis;
+  createdAt: string;
+}

@@ -18,6 +18,7 @@ import { Resources } from './pages/Resources';
 import { Settings } from './pages/Settings';
 import { PrivacyCenter } from './pages/PrivacyCenter';
 import { Dashboard } from './pages/Dashboard';
+import { ResetPassword } from './pages/ResetPassword';
 
 const LayoutContent: React.FC = () => {
   const location = useLocation();
@@ -84,6 +85,7 @@ const LayoutContent: React.FC = () => {
           <Route path="/resources" element={<Resources />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/privacy" element={<PrivacyCenter />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </main>
 

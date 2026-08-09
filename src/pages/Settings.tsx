@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -32,13 +32,36 @@ import { BackButton } from '../components/common/BackButton';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { settings, updateSettings, wipeAllData, discreetMode, toggleDiscreetMode } = useSafeguard();
+  const {
+    settings,
+    updateSettings,
+    wipeAllData,
+    discreetMode,
+    toggleDiscreetMode,
+    user,
+    updateFullName,
+    logout,
+    signOutEverywhere,
+    signInWithPassword,
+    updatePassword,
+  } = useSafeguard();
   const { addToast } = useToast();
 
-  // Account state (minimal)
-  const [name, setName] = useState('Alex Morgan');
-  const [email, setEmail] = useState('alex.morgan@example.com');
+  // Account state — sourced from the authenticated Supabase user / profiles row.
+  const [nameDraft, setNameDraft] = useState(user?.name || '');
   const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  useEffect(() => {
+    setNameDraft(user?.name || '');
+  }, [user?.name]);
+
+  // Change password modal state (only applicable to email/password accounts)
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [currentPass, setCurrentPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Preferences state
   const [notifications, setNotifications] = useState({
@@ -55,51 +78,97 @@ export const Settings: React.FC = () => {
 
   // Modals state
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isDeleteDataModalOpen, setIsDeleteDataModalOpen] = useState(false);
 
-  // Password change state
-  const [currentPass, setCurrentPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
-
-  const handleSaveAccount = (e: React.FormEvent) => {
+  const handleSaveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSavingAccount(true);
+    const res = await updateFullName(nameDraft);
+    setSavingAccount(false);
+
+    if (!res.success) {
+      addToast({
+        title: 'Update Failed',
+        description: res.error || 'Could not update your profile. Please try again.',
+        type: 'warning',
+      });
+      return;
+    }
+
     setIsEditingAccount(false);
     addToast({
       title: 'Account Information Updated',
-      description: 'Your minimal profile preferences have been saved.',
+      description: 'Your profile name has been saved.',
       type: 'success',
     });
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await logout();
     addToast({
       title: 'Signed Out',
-      description: 'You have been signed out of your local session.',
+      description: 'You have been signed out.',
       type: 'info',
     });
     navigate('/');
   };
 
-  const handleSignOutAllDevices = () => {
+  const handleSignOutAllDevices = async () => {
+    const res = await signOutEverywhere();
+    if (!res.success) {
+      addToast({
+        title: 'Could Not Sign Out Everywhere',
+        description: res.error || 'Please try again.',
+        type: 'warning',
+      });
+      return;
+    }
     addToast({
       title: 'Signed Out of All Devices',
-      description: 'All active sessions have been invalidated.',
+      description: 'All active sessions, including this one, have been invalidated.',
       type: 'info',
     });
+    navigate('/');
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPass !== confirmPass) {
       addToast({
         title: 'Passwords Do Not Match',
         description: 'Please ensure new password and confirmation match.',
-        type: 'error',
+        type: 'warning',
       });
       return;
     }
+    if (!user?.email) return;
+
+    setChangingPassword(true);
+
+    // Re-verify the current password before allowing the change.
+    const verifyRes = await signInWithPassword(user.email, currentPass);
+    if (!verifyRes.success) {
+      setChangingPassword(false);
+      addToast({
+        title: 'Current Password Incorrect',
+        description: verifyRes.error || 'Please try again.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    const updateRes = await updatePassword(newPass);
+    setChangingPassword(false);
+
+    if (!updateRes.success) {
+      addToast({
+        title: 'Update Failed',
+        description: updateRes.error || 'Could not update your password. Please try again.',
+        type: 'warning',
+      });
+      return;
+    }
+
     setIsChangePasswordModalOpen(false);
     setCurrentPass('');
     setNewPass('');
@@ -133,12 +202,14 @@ export const Settings: React.FC = () => {
     });
   };
 
-  const handleDeleteAccountConfirmed = () => {
+  const handleDeleteAccountConfirmed = async () => {
     wipeAllData();
+    await logout();
     setIsDeleteAccountModalOpen(false);
     addToast({
-      title: 'Account & Associated Data Deleted',
-      description: 'Your account and all associated assessment information were permanently removed.',
+      title: 'Local Data Cleared & Signed Out',
+      description:
+        'Your local assessment data was removed and you were signed out. Contact support to permanently delete your account record.',
       type: 'info',
     });
     navigate('/');
@@ -166,7 +237,7 @@ export const Settings: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-[#1A1A1A]">ACCOUNT</h2>
-              <p className="text-xs text-[#6B7280]">Minimal account details stored for this session</p>
+              <p className="text-xs text-[#6B7280]">Account details linked to your Supabase sign-in</p>
             </div>
           </div>
           <button
@@ -180,28 +251,32 @@ export const Settings: React.FC = () => {
         {isEditingAccount ? (
           <form onSubmit={handleSaveAccount} className="space-y-4 max-w-md">
             <Input
-              label="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              label="Full name"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="Your name"
             />
             <Input
               label="Email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              value={user?.email || ''}
+              disabled
+              helperText="Email is tied to your sign-in and can't be changed here."
             />
             <div className="pt-2 flex items-center space-x-3">
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                disabled={savingAccount}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-60"
               >
-                Save changes
+                {savingAccount ? 'Saving...' : 'Save changes'}
               </button>
               <button
                 type="button"
-                onClick={() => setIsEditingAccount(false)}
+                onClick={() => {
+                  setIsEditingAccount(false);
+                  setNameDraft(user?.name || '');
+                }}
                 className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
               >
                 Cancel
@@ -214,21 +289,33 @@ export const Settings: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                 Name
               </span>
-              <div className="text-sm font-bold text-slate-900">{name}</div>
+              <div className="text-sm font-bold text-slate-900">{user?.name || '—'}</div>
             </div>
 
             <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                 Email
               </span>
-              <div className="text-sm font-bold text-slate-900 truncate">{email}</div>
+              <div className="text-sm font-bold text-slate-900 truncate">{user?.email || '—'}</div>
             </div>
 
             <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Password
+                Verification
               </span>
-              <div className="text-sm font-bold text-slate-900">••••••••••••</div>
+              {!user ? (
+                <div className="text-sm font-bold text-slate-400">Not signed in</div>
+              ) : user.emailConfirmed ? (
+                <div className="text-sm font-bold text-emerald-700 flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Email verified</span>
+                </div>
+              ) : (
+                <div className="text-sm font-bold text-amber-700 flex items-center space-x-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>Pending verification</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center">
@@ -481,29 +568,43 @@ export const Settings: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-[#1A1A1A]">SECURITY</h2>
-            <p className="text-xs text-[#6B7280]">Password settings, active sessions, and multi-device sign out</p>
+            <p className="text-xs text-[#6B7280]">Sign-in method, active sessions, and multi-device sign out</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Change password card */}
+          {/* Sign-in method card */}
           <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5 space-y-3 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <KeyRound className="w-4 h-4 text-indigo-600" />
-                <span>Change password</span>
+                <span>Sign-in method</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Update your session password regularly to ensure access safety.
+                {!user
+                  ? 'Sign in to see how you access your account.'
+                  : user.hasPasswordAuth
+                  ? 'Update your account password regularly to keep access safe.'
+                  : "You're signed in with Google — there's no password to manage."}
               </p>
             </div>
 
-            <button
-              onClick={() => setIsChangePasswordModalOpen(true)}
-              className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all cursor-pointer shadow-xs"
-            >
-              Update password
-            </button>
+            {user?.hasPasswordAuth ? (
+              <button
+                onClick={() => setIsChangePasswordModalOpen(true)}
+                className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all cursor-pointer shadow-xs w-fit"
+              >
+                Update password
+              </button>
+            ) : user ? (
+              <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
+                Google sign-in
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 bg-stone-100 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
+                Not signed in
+              </span>
+            )}
           </div>
 
           {/* Active sessions card */}
@@ -558,7 +659,7 @@ export const Settings: React.FC = () => {
           <div className="space-y-1">
             <h3 className="font-bold text-slate-900 text-sm">Delete account</h3>
             <p className="text-xs text-[#6B7280]">
-              Permanently remove your account and associated assessment information.
+              Clear all local assessment data and sign out. Full account removal requires contacting support.
             </p>
           </div>
 
@@ -594,6 +695,7 @@ export const Settings: React.FC = () => {
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
             required
+            helperText="At least 6 characters."
           />
           <Input
             label="Confirm new password"
@@ -613,9 +715,10 @@ export const Settings: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer"
+              disabled={changingPassword}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer disabled:opacity-60"
             >
-              Update Password
+              {changingPassword ? 'Updating...' : 'Update Password'}
             </button>
           </div>
         </form>
@@ -657,15 +760,17 @@ export const Settings: React.FC = () => {
         isOpen={isDeleteAccountModalOpen}
         onClose={() => setIsDeleteAccountModalOpen(false)}
         title="Delete Account Confirmation"
-        description="Permanently remove your account and associated assessment information."
+        description="Clear your local assessment data and sign out of this account."
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-700 leading-relaxed">
-            This action will permanently delete your account profile along with all associated reflection questionnaire answers and financial pattern logs stored in local memory.
+            This action clears all reflection questionnaire answers and financial pattern logs stored on this
+            device, then signs you out. It does not permanently delete your account record — contact support for
+            that.
           </p>
 
           <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-[11px] text-slate-600">
-            <strong>Note:</strong> Once deleted, your session cannot be restored.
+            <strong>Note:</strong> Once cleared, your local data cannot be restored.
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-2">
@@ -681,7 +786,7 @@ export const Settings: React.FC = () => {
               onClick={handleDeleteAccountConfirmed}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl cursor-pointer"
             >
-              Permanently Delete Account
+              Clear Data & Sign Out
             </button>
           </div>
         </div>

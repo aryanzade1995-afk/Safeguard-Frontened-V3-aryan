@@ -8,14 +8,25 @@ interface RequireAuthProps {
 }
 
 export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { isAuthenticated, openAuthModal } = useSafeguard();
+  const { isAuthenticated, authLoading, openAuthModal } = useSafeguard();
   const location = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       openAuthModal('login', location.pathname + location.search);
     }
-  }, [isAuthenticated, location.pathname, location.search, openAuthModal]);
+  }, [authLoading, isAuthenticated, location.pathname, location.search, openAuthModal]);
+
+  if (authLoading) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-4 text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm animate-pulse">
+          <Lock className="w-8 h-8" />
+        </div>
+        <p className="text-sm text-slate-500 font-medium">Checking your session...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

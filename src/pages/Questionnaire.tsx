@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -15,6 +15,8 @@ import {
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
 import { BackButton } from '../components/common/BackButton';
+import { analyzeStatement, buildStatementFromAnswers } from '../services/analysisService';
+import { createAssessment } from '../services/assessmentService';
 
 interface Question {
   id: string;
@@ -93,10 +95,11 @@ const QUESTIONS: Question[] = [
 export const Questionnaire: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { questionnaireAnswers, setQuestionnaireAnswer, isDemoMode, resetDemo } = useSafeguard();
+  const { questionnaireAnswers, setQuestionnaireAnswer, isDemoMode, resetDemo, user } = useSafeguard();
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const isAnalyzingRef = useRef<boolean>(false);
 
   const currentQuestion = QUESTIONS[currentIndex];
   const totalQuestions = QUESTIONS.length;
@@ -131,13 +134,55 @@ export const Questionnaire: React.FC = () => {
     }
   };
 
-  const handleViewAssessment = () => {
+  const handleViewAssessment = async () => {
+    if (isAnalyzingRef.current) return;
+
+    const statement = buildStatementFromAnswers(
+      QUESTIONS.map((q) => ({
+        question: q.question,
+        answer: questionnaireAnswers[q.id] || '',
+      }))
+    );
+
+    if (!statement.trim()) {
+      addToast({
+        title: 'No responses to analyze',
+        description: 'Please answer at least one question before viewing your assessment.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    if (!user) {
+      addToast({
+        title: 'Sign In Required',
+        description: 'Please sign in to save and view your assessment.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    isAnalyzingRef.current = true;
     addToast({
       title: 'Generating Assessment',
       description: 'Combining responses with pattern analysis...',
       type: 'info',
     });
-    navigate('/results');
+
+    try {
+      const analysis = await analyzeStatement(statement);
+      await createAssessment(user.id, questionnaireAnswers, analysis);
+      navigate('/results');
+    } catch (err) {
+      addToast({
+        title: 'Assessment Unavailable',
+        description:
+          err instanceof Error ? err.message : 'Something went wrong while analyzing your responses.',
+        type: 'warning',
+      });
+    } finally {
+      isAnalyzingRef.current = false;
+    }
   };
 
   const handleReviewAnswers = () => {
