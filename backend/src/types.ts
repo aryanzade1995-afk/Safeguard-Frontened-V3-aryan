@@ -40,6 +40,21 @@ export interface ErrorResponse {
   error: string;
 }
 
+export interface AssessmentRecord {
+  id: string;
+  userId: string;
+  answers: Record<string, string>;
+  analysis: Analysis;
+  createdAt: string;
+}
+
+export interface AssessmentSuccessResponse {
+  success: true;
+  assessment: AssessmentRecord;
+}
+
+export type AssessmentResponse = AssessmentSuccessResponse | ErrorResponse;
+
 export const SIGNAL_KEYS: SignalKey[] = [
   'income_control',
   'financial_decision_control',

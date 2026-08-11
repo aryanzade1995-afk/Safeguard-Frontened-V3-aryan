@@ -133,6 +133,22 @@ export const PrivacyCenter: React.FC = () => {
         </p>
       </div>
 
+      {/* STATUS STRIP */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-[#EDECE8] rounded-full text-xs font-bold text-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          <span>Financial data — Optional</span>
+        </span>
+        <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-[#EDECE8] rounded-full text-xs font-bold text-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          <span>Questionnaire — Voluntary</span>
+        </span>
+        <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-[#EDECE8] rounded-full text-xs font-bold text-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span>Data sharing — Controlled</span>
+        </span>
+      </div>
+
       {/* PRIVACY STATUS CARD */}
       <div className="bg-white border border-[#EDECE8] rounded-[28px] p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex items-center justify-between border-b border-[#EDECE8] pb-4">
@@ -152,39 +168,39 @@ export const PrivacyCenter: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Financial data
             </span>
             <div className="text-sm font-extrabold text-slate-900">
               {hasFinancialData ? 'Uploaded' : 'Optional'}
             </div>
-            <span className="text-[10px] text-slate-500">In-memory parsing</span>
+            <span className="text-[11px] text-slate-500">In-memory parsing</span>
           </div>
 
           <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Questionnaire
             </span>
             <div className="text-sm font-extrabold text-slate-900">
               {hasQuestionnaireData ? 'Completed' : 'Provided voluntarily'}
             </div>
-            <span className="text-[10px] text-slate-500">Unidentifiable choices</span>
+            <span className="text-[11px] text-slate-500">Unidentifiable choices</span>
           </div>
 
           <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Account info
             </span>
             <div className="text-sm font-extrabold text-slate-900">Minimal</div>
-            <span className="text-[10px] text-slate-500">No account required</span>
+            <span className="text-[11px] text-slate-500">No account required</span>
           </div>
 
           <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Data sharing
             </span>
             <div className="text-sm font-extrabold text-emerald-700">None</div>
-            <span className="text-[10px] text-emerald-800 font-medium">0% external telemetry</span>
+            <span className="text-[11px] text-emerald-800 font-medium">0% external telemetry</span>
           </div>
         </div>
       </div>
@@ -287,17 +303,17 @@ export const PrivacyCenter: React.FC = () => {
             <li className="flex items-center space-x-2 p-2.5 bg-[#FAF9F6] rounded-xl border border-[#EDECE8]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span className="font-semibold">Transaction patterns</span>
-              <span className="text-[10px] text-slate-400 ml-auto">Optionally parsed locally</span>
+              <span className="text-[11px] text-slate-400 ml-auto">Optionally parsed locally</span>
             </li>
             <li className="flex items-center space-x-2 p-2.5 bg-[#FAF9F6] rounded-xl border border-[#EDECE8]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span className="font-semibold">Questionnaire responses</span>
-              <span className="text-[10px] text-slate-400 ml-auto">Stored in browser state</span>
+              <span className="text-[11px] text-slate-400 ml-auto">Stored in browser state</span>
             </li>
             <li className="flex items-center space-x-2 p-2.5 bg-[#FAF9F6] rounded-xl border border-[#EDECE8]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span className="font-semibold">Assessment preferences</span>
-              <span className="text-[10px] text-slate-400 ml-auto">Quick exit & disguise settings</span>
+              <span className="text-[11px] text-slate-400 ml-auto">Quick exit & disguise settings</span>
             </li>
           </ul>
         </div>
@@ -343,7 +359,7 @@ export const PrivacyCenter: React.FC = () => {
           <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 text-xs">Encrypted communication</span>
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
+              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
                 Active (HTTPS)
               </span>
             </div>
@@ -355,7 +371,7 @@ export const PrivacyCenter: React.FC = () => {
           <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 text-xs">Secure authentication</span>
-              <span className="px-2 py-0.5 bg-stone-100 text-slate-600 text-[10px] font-bold rounded-full border border-stone-200">
+              <span className="px-2 py-0.5 bg-stone-100 text-slate-600 text-[11px] font-bold rounded-full border border-stone-200">
                 Planned for production
               </span>
             </div>
@@ -367,7 +383,7 @@ export const PrivacyCenter: React.FC = () => {
           <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 text-xs">Limited data collection</span>
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
+              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
                 Active
               </span>
             </div>
@@ -379,7 +395,7 @@ export const PrivacyCenter: React.FC = () => {
           <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 text-xs">Session protection</span>
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
+              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
                 Active
               </span>
             </div>
@@ -391,7 +407,7 @@ export const PrivacyCenter: React.FC = () => {
           <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 text-xs">Auditability</span>
-              <span className="px-2 py-0.5 bg-stone-100 text-slate-600 text-[10px] font-bold rounded-full border border-stone-200">
+              <span className="px-2 py-0.5 bg-stone-100 text-slate-600 text-[11px] font-bold rounded-full border border-stone-200">
                 Planned for production
               </span>
             </div>
@@ -420,12 +436,12 @@ export const PrivacyCenter: React.FC = () => {
             >
               <div>
                 <span className="font-bold text-slate-900 block">{c.category}</span>
-                <span className="text-[10px] text-slate-500">Granted: {c.date}</span>
+                <span className="text-[11px] text-slate-500">Granted: {c.date}</span>
               </div>
 
               <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
                 <span
-                  className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
+                  className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full ${
                     c.status === 'Active'
                       ? 'bg-emerald-50 text-emerald-700'
                       : 'bg-stone-200 text-slate-600'

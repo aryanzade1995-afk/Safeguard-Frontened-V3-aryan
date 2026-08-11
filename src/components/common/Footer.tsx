@@ -66,7 +66,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-[#EDECE8] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-[#EDECE8] flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-slate-400">
         <p>© 2026 Safeguard Project. Educational & Decision-Support Tool. All rights reserved.</p>
         <p className="italic">Confidential & 100% Client-Side Local Memory</p>
       </div>

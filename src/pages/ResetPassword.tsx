@@ -44,8 +44,8 @@ export const ResetPassword: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto py-16 px-4 animate-fade-in">
-      <div className="relative bg-white rounded-[28px] border border-[#EDECE8] shadow-sm overflow-hidden space-y-6 p-6 sm:p-8">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600" />
+      <div className="relative bg-white rounded-[28px] border border-stone-200 shadow-sm overflow-hidden space-y-6 p-6 sm:p-8">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800" />
 
         <div className="flex items-center space-x-3 pt-1">
           <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
@@ -66,7 +66,7 @@ export const ResetPassword: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/')}
-              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all cursor-pointer"
+              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer"
             >
               Back to Safeguard
             </button>
@@ -108,7 +108,7 @@ export const ResetPassword: React.FC = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-11 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-11 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                 />
                 <button
                   type="button"
@@ -119,7 +119,7 @@ export const ResetPassword: React.FC = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">At least 6 characters.</p>
+              <p className="text-[12px] text-slate-400 leading-relaxed">At least 6 characters.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -135,7 +135,7 @@ export const ResetPassword: React.FC = () => {
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -151,7 +151,7 @@ export const ResetPassword: React.FC = () => {
           </form>
         )}
 
-        <div className="pt-2 border-t border-[#EDECE8] flex items-center justify-end text-xs text-slate-500">
+        <div className="pt-2 border-t border-stone-200 flex items-center justify-end text-xs text-slate-500">
           <div className="flex items-center space-x-1 text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Secured by Supabase Auth</span>

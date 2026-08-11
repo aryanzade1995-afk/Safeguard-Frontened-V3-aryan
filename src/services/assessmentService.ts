@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
-import { Analysis, Assessment } from '../types';
+import { Analysis, Assessment, AssessmentSubmissionResponse } from '../types';
+
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api').replace(/\/+$/, '');
 
 interface AssessmentRow {
   id: string;
@@ -19,21 +21,49 @@ function mapRow(row: AssessmentRow): Assessment {
   };
 }
 
-export async function createAssessment(
-  userId: string,
-  answers: Record<string, string>,
-  analysis: Analysis
+/**
+ * Submits questionnaire answers (plus any statement text built from them and
+ * optional financial data) to the backend, which runs the model, persists
+ * the row in Supabase, and returns the saved assessment. Requires an active
+ * Supabase session — the access token is forwarded so the backend can
+ * verify identity and attribute the row to the caller itself.
+ */
+export async function submitAssessment(
+  statement: string,
+  answers: Record<string, string>
 ): Promise<Assessment> {
-  const { data, error } = await supabase
-    .from('assessments')
-    .insert({ user_id: userId, answers, analysis })
-    .select()
-    .single();
-
-  if (error || !data) {
-    throw new Error(error?.message || 'Could not save your assessment.');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session) {
+    throw new Error('Your session has expired. Please sign in again.');
   }
-  return mapRow(data as AssessmentRow);
+
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_URL}/assessment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session.access_token}`,
+      },
+      body: JSON.stringify({ statement, answers }),
+    });
+  } catch {
+    throw new Error('Unable to reach the analysis service. Please make sure the backend is running and try again.');
+  }
+
+  let data: AssessmentSubmissionResponse;
+  try {
+    data = (await res.json()) as AssessmentSubmissionResponse;
+  } catch {
+    throw new Error('The analysis service returned an unexpected response.');
+  }
+
+  if (!res.ok || data.success !== true) {
+    const message = data.success === false ? data.error : `Assessment request failed with status ${res.status}.`;
+    throw new Error(message);
+  }
+
+  return data.assessment;
 }
 
 // Ordered most-recent first. RLS restricts results to the caller's own rows.

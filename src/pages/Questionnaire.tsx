@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -15,8 +15,7 @@ import {
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
 import { BackButton } from '../components/common/BackButton';
-import { analyzeStatement, buildStatementFromAnswers } from '../services/analysisService';
-import { createAssessment } from '../services/assessmentService';
+import { buildStatementFromAnswers, buildStatementFromTransactions } from '../services/analysisService';
 
 interface Question {
   id: string;
@@ -33,7 +32,6 @@ const QUESTIONS: Question[] = [
       'Mostly',
       'Sometimes',
       'Rarely',
-      'Prefer not to answer',
     ],
   },
   {
@@ -44,7 +42,6 @@ const QUESTIONS: Question[] = [
       'Usually',
       'Sometimes',
       'Rarely',
-      'Prefer not to answer',
     ],
   },
   {
@@ -55,7 +52,6 @@ const QUESTIONS: Question[] = [
       'Rarely',
       'Sometimes',
       'Often',
-      'Prefer not to answer',
     ],
   },
   {
@@ -66,7 +62,6 @@ const QUESTIONS: Question[] = [
       'Mostly',
       'Sometimes',
       'Rarely',
-      'Prefer not to answer',
     ],
   },
   {
@@ -76,7 +71,6 @@ const QUESTIONS: Question[] = [
       'No',
       "I'm not sure",
       'Yes',
-      'Prefer not to answer',
     ],
   },
   {
@@ -87,7 +81,6 @@ const QUESTIONS: Question[] = [
       'Mostly',
       'Sometimes',
       'Rarely',
-      'Prefer not to answer',
     ],
   },
 ];
@@ -95,11 +88,11 @@ const QUESTIONS: Question[] = [
 export const Questionnaire: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { questionnaireAnswers, setQuestionnaireAnswer, isDemoMode, resetDemo, user } = useSafeguard();
+  const { questionnaireAnswers, setQuestionnaireAnswer, isDemoMode, resetDemo, user, transactions, openAuthModal } =
+    useSafeguard();
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
-  const isAnalyzingRef = useRef<boolean>(false);
 
   const currentQuestion = QUESTIONS[currentIndex];
   const totalQuestions = QUESTIONS.length;
@@ -134,9 +127,7 @@ export const Questionnaire: React.FC = () => {
     }
   };
 
-  const handleViewAssessment = async () => {
-    if (isAnalyzingRef.current) return;
-
+  const handleViewAssessment = () => {
     const statement = buildStatementFromAnswers(
       QUESTIONS.map((q) => ({
         question: q.question,
@@ -144,7 +135,13 @@ export const Questionnaire: React.FC = () => {
       }))
     );
 
-    if (!statement.trim()) {
+    // Only append financial-data context when the user actually chose to
+    // provide it (real upload or sample data) — never fabricate it.
+    const fullStatement = isDemoMode
+      ? [statement, buildStatementFromTransactions(transactions)].filter(Boolean).join('\n\n')
+      : statement;
+
+    if (!fullStatement.trim()) {
       addToast({
         title: 'No responses to analyze',
         description: 'Please answer at least one question before viewing your assessment.',
@@ -156,33 +153,16 @@ export const Questionnaire: React.FC = () => {
     if (!user) {
       addToast({
         title: 'Sign In Required',
-        description: 'Please sign in to save and view your assessment.',
+        description: 'Your answers are saved — sign in to generate and save your assessment.',
         type: 'warning',
       });
+      openAuthModal('login', '/questionnaire');
       return;
     }
 
-    isAnalyzingRef.current = true;
-    addToast({
-      title: 'Generating Assessment',
-      description: 'Combining responses with pattern analysis...',
-      type: 'info',
+    navigate('/results', {
+      state: { pendingSubmission: { statement: fullStatement, answers: questionnaireAnswers } },
     });
-
-    try {
-      const analysis = await analyzeStatement(statement);
-      await createAssessment(user.id, questionnaireAnswers, analysis);
-      navigate('/results');
-    } catch (err) {
-      addToast({
-        title: 'Assessment Unavailable',
-        description:
-          err instanceof Error ? err.message : 'Something went wrong while analyzing your responses.',
-        type: 'warning',
-      });
-    } finally {
-      isAnalyzingRef.current = false;
-    }
   };
 
   const handleReviewAnswers = () => {
@@ -197,7 +177,7 @@ export const Questionnaire: React.FC = () => {
       <div className="space-y-3 text-center sm:text-left">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-extrabold uppercase tracking-widest text-indigo-600">
-            Step 3 of 4
+            Step {currentIndex + 1} of {totalQuestions}
           </span>
 
           <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-bold text-emerald-800">
@@ -206,28 +186,28 @@ export const Questionnaire: React.FC = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           Private reflection
         </h1>
 
-        <p className="text-sm sm:text-base text-[#6B7280] leading-relaxed">
+        <p className="text-sm sm:text-base text-slate-500 leading-relaxed">
           Financial transactions cannot explain everything. Your answers help provide context that financial data cannot.
         </p>
       </div>
 
       {isDemoMode && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-[20px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-950">
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-[20px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900">
           <div className="flex items-center space-x-2.5">
             <span className="px-3 py-1 bg-amber-500/20 rounded-full font-extrabold text-xs uppercase tracking-wider shrink-0">
               Demo Mode — Fictional Responses
             </span>
-            <span className="text-xs font-medium text-amber-950/90">
+            <span className="text-xs font-medium text-amber-900/90">
               Fictional questionnaire answers loaded (moderate informational signal).
             </span>
           </div>
           <button
             onClick={handleViewAssessment}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
           >
             <span>Skip to Results</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -237,7 +217,7 @@ export const Questionnaire: React.FC = () => {
 
       {/* MAIN CARD CONTAINER */}
       {!isCompleted ? (
-        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-sm space-y-8 transition-all">
+        <div className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-sm space-y-8 transition-all">
           {/* Question Progress Indicator */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
@@ -257,7 +237,7 @@ export const Questionnaire: React.FC = () => {
 
           {/* Central Question Display */}
           <div className="space-y-6">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] leading-snug">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
               {currentQuestion.question}
             </h2>
 
@@ -272,8 +252,8 @@ export const Questionnaire: React.FC = () => {
                     onClick={() => handleSelectOption(option)}
                     className={`w-full text-left p-4 sm:p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-bold shadow-xs'
-                        : 'border-[#EDECE8] bg-white text-slate-800 hover:border-indigo-200 hover:bg-[#FAF9F6] font-medium'
+                        ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-bold shadow-xs'
+                        : 'border-stone-200 bg-white text-slate-800 hover:border-indigo-200 hover:bg-stone-50 font-medium'
                     }`}
                   >
                     <span className="text-sm sm:text-base">{option}</span>
@@ -293,10 +273,10 @@ export const Questionnaire: React.FC = () => {
           </div>
 
           {/* QUESTION NAVIGATION BOTTOM */}
-          <div className="pt-6 border-t border-[#EDECE8] flex items-center justify-between gap-3">
+          <div className="pt-6 border-t border-stone-200 flex items-center justify-between gap-3">
             <button
               onClick={handleBack}
-              className="px-5 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all flex items-center space-x-1.5 cursor-pointer"
+              className="px-5 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -313,16 +293,16 @@ export const Questionnaire: React.FC = () => {
         </div>
       ) : (
         /* AFTER FINAL QUESTION: COMPLETION SCREEN */
-        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 sm:p-10 shadow-sm text-center space-y-6 animate-fade-in">
+        <div className="bg-white border border-stone-200 rounded-[24px] p-8 sm:p-10 shadow-sm text-center space-y-6 animate-fade-in">
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8 text-indigo-600" />
           </div>
 
           <div className="space-y-2 max-w-md mx-auto">
-            <h2 className="text-2xl font-extrabold text-[#1A1A1A]">
+            <h2 className="text-2xl font-extrabold text-slate-900">
               Thank you for sharing.
             </h2>
-            <p className="text-sm text-[#6B7280] leading-relaxed">
+            <p className="text-sm text-slate-500 leading-relaxed">
               Your responses will be combined with the optional financial patterns to provide an informational assessment.
             </p>
           </div>
@@ -332,7 +312,7 @@ export const Questionnaire: React.FC = () => {
               onClick={handleViewAssessment}
               className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <span>View assessment</span>
+              <span>View Financial Autonomy Report</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -348,7 +328,7 @@ export const Questionnaire: React.FC = () => {
       )}
 
       {/* SECURITY UX PRIVACY NOTE */}
-      <div className="p-4 bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl text-xs text-slate-600 leading-relaxed flex items-start space-x-2.5">
+      <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-xs text-slate-600 leading-relaxed flex items-start space-x-2.5">
         <Shield className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
         <span>
           Do not include names, account numbers, passwords, or other identifying information in optional text fields.

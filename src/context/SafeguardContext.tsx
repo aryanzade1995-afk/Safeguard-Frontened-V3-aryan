@@ -4,7 +4,6 @@ import {
   FinancialPattern,
   Transaction,
   UserSettings,
-  AssessmentAnswer,
 } from '../types';
 import {
   DEMO_TRANSACTIONS,
@@ -183,8 +182,6 @@ interface SafeguardContextType {
   updateTransactionNote: (id: string, note: string) => void;
   questionnaireAnswers: Record<string, string>;
   setQuestionnaireAnswer: (questionId: string, answer: string) => void;
-  assessmentAnswers: Record<string, AssessmentAnswer>;
-  setAssessmentAnswer: (questionId: string, answer: AssessmentAnswer) => void;
   triggerQuickExit: () => void;
   wipeAllData: () => void;
   calculatedScore: {
@@ -459,11 +456,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return saved ? JSON.parse(saved) : {};
   });
 
-  const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, AssessmentAnswer>>(() => {
-    const saved = localStorage.getItem('safeguard_assessment');
-    return saved ? JSON.parse(saved) : {};
-  });
-
   const startDemo = () => {
     setIsDemoMode(true);
     setTransactions(DEMO_TRANSACTIONS);
@@ -477,7 +469,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsDemoMode(false);
     setTransactions(INITIAL_TRANSACTIONS);
     setQuestionnaireAnswers({});
-    setAssessmentAnswers({});
     localStorage.removeItem('safeguard_is_demo');
     localStorage.setItem('safeguard_transactions', JSON.stringify(INITIAL_TRANSACTIONS));
     localStorage.setItem('safeguard_questionnaire', JSON.stringify({}));
@@ -494,10 +485,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('safeguard_questionnaire', JSON.stringify(questionnaireAnswers));
   }, [questionnaireAnswers]);
-
-  useEffect(() => {
-    localStorage.setItem('safeguard_assessment', JSON.stringify(assessmentAnswers));
-  }, [assessmentAnswers]);
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
@@ -539,10 +526,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setQuestionnaireAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
-  const setAssessmentAnswer = (questionId: string, answer: AssessmentAnswer) => {
-    setAssessmentAnswers((prev) => ({ ...prev, [questionId]: answer }));
-  };
-
   const triggerQuickExit = () => {
     if (settings.autoClearOnExit) {
       localStorage.clear();
@@ -562,7 +545,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsDemoMode(false);
     setTransactions(INITIAL_TRANSACTIONS);
     setQuestionnaireAnswers({});
-    setAssessmentAnswers({});
     setSettings(DEFAULT_SETTINGS);
   };
 
@@ -646,8 +628,6 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateTransactionNote,
         questionnaireAnswers,
         setQuestionnaireAnswer,
-        assessmentAnswers,
-        setAssessmentAnswer,
         triggerQuickExit,
         wipeAllData,
         calculatedScore: calculateAutonomyScore(),

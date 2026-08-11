@@ -1,5 +1,39 @@
 @import "tailwindcss";
 
+/*
+ * Slightly larger, more readable type scale than Tailwind's default.
+ * Only font-size/line-height tokens are overridden here — spacing/padding
+ * tokens are untouched, so layouts and component sizing stay identical.
+ */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.5;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.4;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 1.3;
+  --text-4xl: 2.375rem;
+  --text-4xl--line-height: 1.2;
+  --text-5xl: 3.125rem;
+  --text-5xl--line-height: 1.1;
+  --text-6xl: 3.875rem;
+  --text-6xl--line-height: 1.08;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 @layer utilities {
   @keyframes fadeIn {
     from {
@@ -54,6 +88,20 @@
     }
   }
 
+  @keyframes flowDash {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: -160;
+    }
+  }
+
+  .animate-flow-dash {
+    stroke-dasharray: 5 9;
+    animation: flowDash 14s linear infinite;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -72,6 +120,57 @@
 
   .animate-pulse-subtle {
     animation: pulseSubtle 2s infinite ease-in-out;
+  }
+
+  /* Hero wave field — DATA -> PATTERNS -> INSIGHT background animation */
+  @keyframes heroWaveDriftA {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(1.5%, -1.5%); }
+  }
+
+  @keyframes heroWaveDriftB {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-1.5%, 1%); }
+  }
+
+  @keyframes heroGlowPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.06); }
+  }
+
+  @keyframes heroParticleFlow {
+    0% { transform: translate(0, 0); opacity: 0; }
+    15% { opacity: 0.85; }
+    85% { opacity: 0.85; }
+    100% { transform: translate(var(--particle-dx, 20px), var(--particle-dy, -10px)); opacity: 0; }
+  }
+
+  .hero-wave-line-a {
+    stroke-dasharray: 6 10;
+    animation: flowDash 16s linear infinite, heroWaveDriftA 24s ease-in-out infinite;
+  }
+
+  .hero-wave-line-b {
+    stroke-dasharray: 4 9;
+    animation: flowDash 20s linear infinite reverse, heroWaveDriftB 30s ease-in-out infinite;
+  }
+
+  .hero-wave-glow {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: heroGlowPulse 9s ease-in-out infinite;
+  }
+
+  .hero-wave-particle {
+    animation: heroParticleFlow linear infinite;
+    animation-duration: var(--particle-duration, 8s);
+    animation-delay: var(--particle-delay, 0s);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-wave-field * {
+      animation: none !important;
+    }
   }
 }
 

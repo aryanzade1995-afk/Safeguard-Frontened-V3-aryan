@@ -217,27 +217,27 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl mx-auto py-4 sm:py-6">
-      <BackButton fallbackPath="/" />
+      <BackButton fallbackPath="/dashboard" />
       {/* Header */}
-      <div className="border-b border-[#EDECE8] pb-6 space-y-2">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
+      <div className="border-b border-stone-200 pb-6 space-y-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           Settings
         </h1>
-        <p className="text-sm sm:text-base text-[#6B7280]">
+        <p className="text-sm sm:text-base text-slate-500">
           Manage your account, preferences, privacy controls, and security options.
         </p>
       </div>
 
       {/* 1. ACCOUNT SECTION */}
-      <section className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-[#EDECE8] pb-4">
+      <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-[#1A1A1A]">ACCOUNT</h2>
-              <p className="text-xs text-[#6B7280]">Account details linked to your Supabase sign-in</p>
+              <h2 className="text-lg font-extrabold text-slate-900">ACCOUNT</h2>
+              <p className="text-xs text-slate-500">Account details linked to your Supabase sign-in</p>
             </div>
           </div>
           <button
@@ -285,22 +285,22 @@ export const Settings: React.FC = () => {
           </form>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                 Name
               </span>
               <div className="text-sm font-bold text-slate-900">{user?.name || '—'}</div>
             </div>
 
-            <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                 Email
               </span>
               <div className="text-sm font-bold text-slate-900 truncate">{user?.email || '—'}</div>
             </div>
 
-            <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                 Verification
               </span>
               {!user ? (
@@ -311,7 +311,7 @@ export const Settings: React.FC = () => {
                   <span>Email verified</span>
                 </div>
               ) : (
-                <div className="text-sm font-bold text-amber-700 flex items-center space-x-1.5">
+                <div className="text-sm font-bold text-amber-900 flex items-center space-x-1.5">
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>Pending verification</span>
                 </div>
@@ -321,7 +321,7 @@ export const Settings: React.FC = () => {
             <div className="flex items-center">
               <button
                 onClick={handleSignOut}
-                className="w-full py-3 px-4 bg-white hover:bg-stone-50 border border-[#EDECE8] text-slate-800 font-bold text-xs rounded-2xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
+                className="w-full py-3 px-4 bg-white hover:bg-stone-50 border border-stone-200 text-slate-800 font-bold text-xs rounded-2xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
               >
                 <LogOut className="w-4 h-4 text-slate-500" />
                 <span>Sign out</span>
@@ -332,14 +332,14 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* 2. PREFERENCES SECTION */}
-      <section className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center space-x-3 border-b border-[#EDECE8] pb-4">
+      <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center space-x-3 border-b border-stone-200 pb-4">
           <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
             <Sliders className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-[#1A1A1A]">PREFERENCES</h2>
-            <p className="text-xs text-[#6B7280]">Notification settings, language, and display style</p>
+            <h2 className="text-lg font-extrabold text-slate-900">PREFERENCES</h2>
+            <p className="text-xs text-slate-500">Notification settings, language, and display style</p>
           </div>
         </div>
 
@@ -352,7 +352,7 @@ export const Settings: React.FC = () => {
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <label className="p-3.5 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl flex items-center space-x-3 cursor-pointer">
+              <label className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={notifications.emailUpdates}
@@ -364,7 +364,7 @@ export const Settings: React.FC = () => {
                 <span className="text-xs font-bold text-slate-800">Email updates</span>
               </label>
 
-              <label className="p-3.5 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl flex items-center space-x-3 cursor-pointer">
+              <label className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={notifications.sessionReminders}
@@ -376,7 +376,7 @@ export const Settings: React.FC = () => {
                 <span className="text-xs font-bold text-slate-800">Session reminders</span>
               </label>
 
-              <label className="p-3.5 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl flex items-center space-x-3 cursor-pointer">
+              <label className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={notifications.inAppAlerts}
@@ -400,7 +400,7 @@ export const Settings: React.FC = () => {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="English (US)">English (US)</option>
                 <option value="English (UK)">English (UK)</option>
@@ -418,7 +418,7 @@ export const Settings: React.FC = () => {
               <select
                 value={appearance}
                 onChange={(e) => setAppearance(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="Light Warm">Light Warm (Editorial Neutral)</option>
                 <option value="System Default">System Default</option>
@@ -428,10 +428,10 @@ export const Settings: React.FC = () => {
           </div>
 
           {/* Discreet Disguise Mode */}
-          <div className="pt-2 border-t border-[#EDECE8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="pt-2 border-t border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h4 className="font-bold text-slate-900 text-xs">Discreet Disguise Mode</h4>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[12px] text-slate-500">
                 Replaces app logo and title in navigation with generic "Personal Ledger"
               </p>
             </div>
@@ -451,20 +451,20 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* 3. PRIVACY SECTION */}
-      <section className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center space-x-3 border-b border-[#EDECE8] pb-4">
+      <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center space-x-3 border-b border-stone-200 pb-4">
           <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-[#1A1A1A]">PRIVACY</h2>
-            <p className="text-xs text-[#6B7280]">Access Privacy Center and granular local data controls</p>
+            <h2 className="text-lg font-extrabold text-slate-900">PRIVACY</h2>
+            <p className="text-xs text-slate-500">Access Privacy Center and granular local data controls</p>
           </div>
         </div>
 
         {/* Featured Privacy Center Link Card */}
         <NavLink to="/settings/privacy" className="block group">
-          <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex items-center justify-between border border-indigo-800">
+          <div className="bg-gradient-to-r from-indigo-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex items-center justify-between border border-indigo-800">
             <div className="flex items-center space-x-3.5">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-xs">
                 <ShieldCheck className="w-6 h-6 text-indigo-300" />
@@ -487,7 +487,7 @@ export const Settings: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {/* Data permissions */}
-          <div className="space-y-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5">
+          <div className="space-y-3 bg-stone-50 border border-stone-200 rounded-2xl p-5">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
               Data permissions
             </h3>
@@ -495,28 +495,28 @@ export const Settings: React.FC = () => {
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-800">In-memory local parsing</span>
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
                   Granted
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
+              <p className="text-[12px] text-slate-500 leading-relaxed">
                 Bank statement files are read entirely within browser memory and never uploaded to cloud servers.
               </p>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#EDECE8]">
+              <div className="flex items-center justify-between pt-2 border-t border-stone-200">
                 <span className="font-bold text-slate-800">Private Reflection Storage</span>
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
                   Local Session
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
+              <p className="text-[12px] text-slate-500 leading-relaxed">
                 Questionnaire responses are stored locally in your browser's private memory state.
               </p>
             </div>
           </div>
 
           {/* Delete data */}
-          <div className="space-y-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5 flex flex-col justify-between">
+          <div className="space-y-3 bg-stone-50 border border-stone-200 rounded-2xl p-5 flex flex-col justify-between">
             <div className="space-y-1">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
                 Delete data
@@ -540,7 +540,7 @@ export const Settings: React.FC = () => {
         <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-900">Quick Exit Redirect URL</span>
-            <span className="text-[10px] text-slate-400">Esc x 2 or button click</span>
+            <span className="text-[11px] text-slate-400">Esc x 2 or button click</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -561,26 +561,26 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* 4. SECURITY SECTION */}
-      <section className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center space-x-3 border-b border-[#EDECE8] pb-4">
+      <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center space-x-3 border-b border-stone-200 pb-4">
           <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
             <Lock className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-[#1A1A1A]">SECURITY</h2>
-            <p className="text-xs text-[#6B7280]">Sign-in method, active sessions, and multi-device sign out</p>
+            <h2 className="text-lg font-extrabold text-slate-900">SECURITY</h2>
+            <p className="text-xs text-slate-500">Sign-in method, active sessions, and multi-device sign out</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Sign-in method card */}
-          <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <KeyRound className="w-4 h-4 text-indigo-600" />
                 <span>Sign-in method</span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
+              <p className="text-[12px] text-slate-500 leading-relaxed">
                 {!user
                   ? 'Sign in to see how you access your account.'
                   : user.hasPasswordAuth
@@ -592,23 +592,23 @@ export const Settings: React.FC = () => {
             {user?.hasPasswordAuth ? (
               <button
                 onClick={() => setIsChangePasswordModalOpen(true)}
-                className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all cursor-pointer shadow-xs w-fit"
+                className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer shadow-xs w-fit"
               >
                 Update password
               </button>
             ) : user ? (
-              <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
+              <span className="text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
                 Google sign-in
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 bg-stone-100 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
+              <span className="text-[11px] text-slate-400 bg-stone-100 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
                 Not signed in
               </span>
             )}
           </div>
 
           {/* Active sessions card */}
-          <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <Laptop className="w-4 h-4 text-indigo-600" />
@@ -617,29 +617,29 @@ export const Settings: React.FC = () => {
               <div className="text-xs text-slate-700 font-semibold pt-1">
                 Current Browser Session
               </div>
-              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold inline-block">
+              <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold inline-block">
                 Active now
               </span>
             </div>
 
-            <span className="text-[10px] text-slate-400">1 session logged</span>
+            <span className="text-[11px] text-slate-400">1 session logged</span>
           </div>
 
           {/* Sign out of all devices card */}
-          <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <LogOut className="w-4 h-4 text-indigo-600" />
                 <span>Sign out of all devices</span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
+              <p className="text-[12px] text-slate-500 leading-relaxed">
                 Invalidate all active session tokens across other computers or mobile phones.
               </p>
             </div>
 
             <button
               onClick={handleSignOutAllDevices}
-              className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all cursor-pointer shadow-xs"
+              className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer shadow-xs"
             >
               Sign out everywhere
             </button>
@@ -648,8 +648,8 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* 5. DANGER ZONE SECTION */}
-      <section className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-4">
-        <div className="border-b border-[#EDECE8] pb-3">
+      <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-4">
+        <div className="border-b border-stone-200 pb-3">
           <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
             DANGER ZONE
           </h2>
@@ -658,7 +658,7 @@ export const Settings: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-stone-50/80 border border-stone-200 rounded-2xl">
           <div className="space-y-1">
             <h3 className="font-bold text-slate-900 text-sm">Delete account</h3>
-            <p className="text-xs text-[#6B7280]">
+            <p className="text-xs text-slate-500">
               Clear all local assessment data and sign out. Full account removal requires contacting support.
             </p>
           </div>
@@ -769,7 +769,7 @@ export const Settings: React.FC = () => {
             that.
           </p>
 
-          <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-[11px] text-slate-600">
+          <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-[12px] text-slate-600">
             <strong>Note:</strong> Once cleared, your local data cannot be restored.
           </div>
 

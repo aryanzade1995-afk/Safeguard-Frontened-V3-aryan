@@ -5,7 +5,6 @@ import {
   Lock,
   ArrowRight,
   ChevronDown,
-  CheckCircle2,
   FileText,
   BarChart2,
   HelpCircle,
@@ -14,6 +13,7 @@ import {
   EyeOff,
   Sliders,
   Sparkles,
+  Wallet,
   AlertCircle,
   FileCheck2,
   ShieldAlert,
@@ -26,6 +26,8 @@ import { Badge } from '../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
+import { AmbientLines } from '../components/common/AmbientLines';
+import { HeroWaveField } from '../components/common/HeroWaveField';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -35,9 +37,9 @@ export const Home: React.FC = () => {
 
   const handleStartAssessment = () => {
     if (!isAuthenticated) {
-      openAuthModal('login', '/dashboard');
+      openAuthModal('login', '/assessment');
     } else {
-      navigate('/dashboard');
+      navigate('/assessment');
     }
   };
 
@@ -59,11 +61,18 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-20 py-4 sm:py-8 animate-fade-in selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="relative z-0 space-y-20 py-4 sm:py-8 animate-fade-in selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Ambient background line decoration — purely visual, sits behind content */}
+      <AmbientLines corner="top-left" />
+      <AmbientLines corner="bottom-right" />
+
       {/* ---------------- HERO SECTION ---------------- */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-2 pb-8">
+      <section className="relative grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-2 pb-8">
+        {/* Data -> Patterns -> Insight flowing wave/particle field, behind content */}
+        <HeroWaveField />
+
         {/* Left Column: Typography & CTAs */}
-        <div className="lg:col-span-7 space-y-6 text-left">
+        <div className="relative z-10 lg:col-span-7 space-y-6 text-left">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-semibold text-indigo-700">
             <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
             <span>Private & Consent-Based Financial Reflection</span>
@@ -96,7 +105,7 @@ export const Home: React.FC = () => {
               onClick={handleStartAssessment}
               className="w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <span>Start private assessment</span>
+              <span>Start privately</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -111,74 +120,43 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Right Column: Sophisticated Abstract Dashboard Preview */}
-        <div className="lg:col-span-5 w-full">
+        <div className="relative z-10 lg:col-span-5 w-full">
           <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-sm space-y-6 hover:shadow-md transition-shadow relative overflow-hidden">
             {/* Ambient subtle decorative light pill */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
 
-            {/* Dashboard Header */}
-            <div className="flex items-center justify-between border-b border-[#EDECE8] pb-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF] font-bold">
-                  Sample Pattern Summary
-                </p>
-                <h3 className="text-lg font-bold text-[#1A1A1A] mt-0.5">Financial Independence Overview</h3>
-              </div>
-              <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full uppercase tracking-wider">
-                Pattern Identified
-              </span>
+            {/* Panel Header */}
+            <div className="border-b border-[#EDECE8] pb-4">
+              <p className="text-[11px] uppercase tracking-widest text-[#9CA3AF] font-bold">
+                How your data becomes insight
+              </p>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mt-0.5">From raw data to reflection</h3>
             </div>
 
-            {/* Neutral Chart Visual Representation */}
-            <div className="space-y-3 bg-[#FAF9F6] p-4 rounded-2xl border border-[#EDECE8]">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-600">
-                <span>Monthly Activity Breakdown (Fictional)</span>
-                <span className="font-bold text-indigo-700">84% Autonomy Score</span>
-              </div>
-
-              {/* Sample Mini Bar Graph */}
-              <div className="flex items-end gap-2 h-20 pt-2 pb-1">
-                <div className="flex-1 bg-indigo-100 rounded-t-md h-[40%]" title="Week 1"></div>
-                <div className="flex-1 bg-indigo-200 rounded-t-md h-[55%]" title="Week 2"></div>
-                <div className="flex-1 bg-amber-200 rounded-t-md h-[85%] relative group" title="Week 3 (Pattern Flagged)">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-900 text-white text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">
-                    Review
+            {/* 5-Node Flow Visual: Income -> Transactions -> Patterns -> Context -> Insights */}
+            <div className="space-y-0">
+              {[
+                { icon: Wallet, label: 'Income', desc: 'Your earnings, if you choose to share them' },
+                { icon: FileText, label: 'Transactions', desc: 'Optional statement or CSV data' },
+                { icon: BarChart2, label: 'Patterns', desc: 'Neutral, observational trends' },
+                { icon: HelpCircle, label: 'Context', desc: 'Your voluntary reflection answers' },
+                { icon: Sparkles, label: 'Insights', desc: 'A private, non-diagnostic summary' },
+              ].map((node, idx, arr) => (
+                <div key={node.label} className="flex space-x-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                      <node.icon className="w-4 h-4" />
+                    </div>
+                    {idx < arr.length - 1 && <div className="w-px flex-1 bg-stone-200 my-1"></div>}
+                  </div>
+                  <div className={idx < arr.length - 1 ? 'pb-5' : ''}>
+                    <span className="text-sm font-bold text-slate-900 block">{node.label}</span>
+                    <span className="text-xs text-[#6B7280]">{node.desc}</span>
                   </div>
                 </div>
-                <div className="flex-1 bg-indigo-300 rounded-t-md h-[60%]" title="Week 4"></div>
-                <div className="flex-1 bg-indigo-600 rounded-t-md h-[70%]" title="Week 5"></div>
-              </div>
-
-              <p className="text-[11px] text-[#9CA3AF] italic text-center">
-                3 late-night external transfers flagged for personal review
-              </p>
+              ))}
             </div>
 
-            {/* "Your Responses" Section */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                User Self-Reflection Context
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-white border border-[#EDECE8] rounded-xl">
-                  <span className="text-[10px] text-slate-400 block">Primary Account</span>
-                  <span className="font-semibold text-slate-800">Independent Access</span>
-                </div>
-                <div className="p-2.5 bg-white border border-[#EDECE8] rounded-xl">
-                  <span className="text-[10px] text-slate-400 block">Emergency Funds</span>
-                  <span className="font-semibold text-amber-800">Shared / Restricted</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy Indicator Footer */}
-            <div className="flex items-center justify-between text-xs text-[#9CA3AF] pt-2 border-t border-[#EDECE8]">
-              <div className="flex items-center space-x-1.5 text-emerald-700 font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>100% Local Encryption</span>
-              </div>
-              <span>Zero Cloud Upload</span>
-            </div>
           </div>
         </div>
       </section>
@@ -436,7 +414,7 @@ export const Home: React.FC = () => {
                   Review Data <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </span>
                 {flaggedCount > 0 && (
-                  <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full">
+                  <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[11px] font-bold rounded-full">
                     {flaggedCount} Flagged
                   </span>
                 )}

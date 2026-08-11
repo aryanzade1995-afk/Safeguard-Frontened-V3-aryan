@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SafeguardProvider } from './context/SafeguardContext';
 import { ToastProvider } from './context/ToastContext';
 import { Navbar } from './components/common/Navbar';
@@ -21,19 +21,6 @@ import { Dashboard } from './pages/Dashboard';
 import { ResetPassword } from './pages/ResetPassword';
 
 const LayoutContent: React.FC = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
-
-  if (isDashboard) {
-    return (
-      <div className="min-h-screen bg-[#FAF9F6] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden w-full">
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-slate-900 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden w-full">
       <Navbar />
@@ -42,38 +29,13 @@ const LayoutContent: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route
-            path="/assessment"
-            element={
-              <RequireAuth>
-                <Assessment />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/financial-data"
-            element={
-              <RequireAuth>
-                <FinancialData />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/pattern-analysis"
-            element={
-              <RequireAuth>
-                <PatternAnalysis />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/questionnaire"
-            element={
-              <RequireAuth>
-                <Questionnaire />
-              </RequireAuth>
-            }
-          />
+          {/* Consent, data choice, and the questionnaire itself are browsable
+              without an account — only submitting the questionnaire (which
+              writes to Supabase) requires sign-in, prompted at that point. */}
+          <Route path="/assessment" element={<Assessment />} />
+          <Route path="/financial-data" element={<FinancialData />} />
+          <Route path="/pattern-analysis" element={<PatternAnalysis />} />
+          <Route path="/questionnaire" element={<Questionnaire />} />
           <Route
             path="/results"
             element={

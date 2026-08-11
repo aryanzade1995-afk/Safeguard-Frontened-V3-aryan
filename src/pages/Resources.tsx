@@ -20,10 +20,24 @@ import {
 import { useToast } from '../context/ToastContext';
 import { BackButton } from '../components/common/BackButton';
 
+type ResourceGroup =
+  | 'Financial autonomy'
+  | 'Financial privacy'
+  | 'Account access'
+  | 'Financial planning';
+
+const RESOURCE_GROUPS: ResourceGroup[] = [
+  'Financial autonomy',
+  'Financial privacy',
+  'Account access',
+  'Financial planning',
+];
+
 interface Article {
   id: string;
   title: string;
   category: string;
+  group: ResourceGroup;
   readTime: string;
   summary: string;
   content: string[];
@@ -34,6 +48,7 @@ const ARTICLES: Article[] = [
     id: 'art-1',
     title: 'Understanding your financial independence',
     category: 'Autonomy Basics',
+    group: 'Financial autonomy',
     readTime: '4 min read',
     summary: 'A foundational overview of what constitutes independent financial capacity and how choices around personal funds shape long-term security.',
     content: [
@@ -46,6 +61,7 @@ const ARTICLES: Article[] = [
     id: 'art-2',
     title: 'What transaction history can—and cannot—tell you',
     category: 'Pattern Analysis',
+    group: 'Financial autonomy',
     readTime: '5 min read',
     summary: 'Exploring how mathematical transaction records highlight statistical anomalies without proving intent, pressure, or context.',
     content: [
@@ -58,6 +74,7 @@ const ARTICLES: Article[] = [
     id: 'art-3',
     title: 'Creating a personal financial safety plan',
     category: 'Planning & Security',
+    group: 'Financial planning',
     readTime: '6 min read',
     summary: 'Practical, step-by-step measures for safeguarding emergency reserves, identity records, and secondary communication channels.',
     content: [
@@ -70,6 +87,7 @@ const ARTICLES: Article[] = [
     id: 'art-4',
     title: 'Protecting sensitive financial information',
     category: 'Digital Privacy',
+    group: 'Financial privacy',
     readTime: '4 min read',
     summary: 'General guidelines for securing online banking credentials, enabling two-factor authentication, and managing browser sessions safely.',
     content: [
@@ -82,6 +100,7 @@ const ARTICLES: Article[] = [
     id: 'art-5',
     title: 'Understanding shared accounts',
     category: 'Account Structures',
+    group: 'Account access',
     readTime: '5 min read',
     summary: 'How joint bank accounts, authorized user credit cards, and shared loans function legally and practically.',
     content: [
@@ -254,7 +273,7 @@ export const Resources: React.FC = () => {
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[10px] font-bold rounded-full">
+                            <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full">
                               {article.category}
                             </span>
                             <button
@@ -335,7 +354,7 @@ export const Resources: React.FC = () => {
                 Financial autonomy is the ability to make independent financial decisions, access personal money, and maintain complete visibility over your earnings and accounts.
               </p>
             </div>
-            <p className="text-[11px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
+            <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
               Why it matters: Independent access ensures stability during life transitions and unexpected situations.
             </p>
           </div>
@@ -353,7 +372,7 @@ export const Resources: React.FC = () => {
                 Financial pressure can occur through restrictive budgeting, enforced cash withdrawals, restricted credit access, or required permission for daily spending.
               </p>
             </div>
-            <p className="text-[11px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
+            <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
               Note: Every situation is unique. Experiencing shared budgeting differs from forced financial isolation.
             </p>
           </div>
@@ -371,18 +390,18 @@ export const Resources: React.FC = () => {
                 Protecting privacy involves using unshared email accounts for e-statements, enabling strong device locks, and maintaining secure physical copies of personal identification.
               </p>
             </div>
-            <p className="text-[11px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
+            <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
               Best practice: Utilize multi-factor authentication on unshared secondary mobile devices or security keys.
             </p>
           </div>
         </div>
       </div>
 
-      {/* SUPPORT DIRECTORY (Categorized Cards) */}
+      {/* SUPPORT (Categorized Cards) */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-extrabold text-[#1A1A1A] tracking-tight">
-            Support Directory
+            Support
           </h2>
           <p className="text-xs text-[#6B7280] mt-0.5">
             Confidential organizations offering specialized information, advocacy, and guidance.
@@ -406,7 +425,7 @@ export const Resources: React.FC = () => {
               </div>
 
               <div className="pt-3 border-t border-[#EDECE8] flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-medium">Free & Confidential</span>
+                <span className="text-[11px] text-slate-400 font-medium">Free & Confidential</span>
                 <button
                   onClick={() => handleOpenSupport(cat)}
                   className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-all flex items-center space-x-1 cursor-pointer"
@@ -420,8 +439,8 @@ export const Resources: React.FC = () => {
         </div>
       </div>
 
-      {/* EDUCATIONAL ARTICLES GRID */}
-      <div className="space-y-4">
+      {/* EDUCATIONAL ARTICLES — GROUPED BY CATEGORY */}
+      <div className="space-y-10">
         <div>
           <h2 className="text-xl font-extrabold text-[#1A1A1A] tracking-tight">
             Educational Guides & Articles
@@ -431,37 +450,48 @@ export const Resources: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ARTICLES.map((article) => (
-            <div
-              key={article.id}
-              onClick={() => handleOpenArticle(article)}
-              className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all group"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[10px] font-bold rounded-full border border-stone-200">
-                    {article.category}
-                  </span>
-                  <span className="text-[10px] text-slate-400">{article.readTime}</span>
-                </div>
+        {RESOURCE_GROUPS.map((group) => {
+          const groupArticles = ARTICLES.filter((a) => a.group === group);
+          if (groupArticles.length === 0) return null;
+          return (
+            <div key={group} className="space-y-4">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-indigo-700">
+                {group}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {groupArticles.map((article) => (
+                  <div
+                    key={article.id}
+                    onClick={() => handleOpenArticle(article)}
+                    className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full border border-stone-200">
+                          {article.category}
+                        </span>
+                        <span className="text-[11px] text-slate-400">{article.readTime}</span>
+                      </div>
 
-                <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors leading-snug">
-                  {article.title}
-                </h3>
+                      <h4 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors leading-snug">
+                        {article.title}
+                      </h4>
 
-                <p className="text-xs text-[#6B7280] leading-relaxed line-clamp-3">
-                  {article.summary}
-                </p>
-              </div>
+                      <p className="text-xs text-[#6B7280] leading-relaxed line-clamp-3">
+                        {article.summary}
+                      </p>
+                    </div>
 
-              <div className="pt-3 border-t border-[#EDECE8] flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-                <span>Read guide</span>
-                <ArrowRight className="w-4 h-4" />
+                    <div className="pt-3 border-t border-[#EDECE8] flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+                      <span>Read guide</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
         </>
       )}
@@ -484,7 +514,7 @@ export const Resources: React.FC = () => {
             <div className="flex items-start justify-between gap-4 border-b border-[#EDECE8] pb-4">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
-                  <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full">
+                  <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full">
                     {selectedArticle.category}
                   </span>
                   <span className="text-xs text-slate-400">• {selectedArticle.readTime}</span>
@@ -550,7 +580,7 @@ export const Resources: React.FC = () => {
               </p>
 
               <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-900 block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-900 block">
                   Contact / Referral Directory
                 </span>
                 <p className="font-mono font-bold text-indigo-950 text-xs sm:text-sm">
@@ -560,7 +590,7 @@ export const Resources: React.FC = () => {
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400">All contacts are free & confidential</span>
+              <span className="text-[12px] text-slate-400">All contacts are free & confidential</span>
               <button
                 onClick={() => setSelectedCategory(null)}
                 className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition-all cursor-pointer"

@@ -83,10 +83,10 @@ export const AIInsight: React.FC<AIInsightProps> = ({
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 block">
+            <span className="text-[12px] font-extrabold uppercase tracking-wider text-indigo-700 block">
               AI-assisted insight
             </span>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[12px] text-slate-500">
               AI is organizing the information you provided.
             </p>
           </div>
@@ -105,10 +105,10 @@ export const AIInsight: React.FC<AIInsightProps> = ({
               content={
                 <div className="max-w-xs text-left space-y-1 p-1">
                   <p className="font-bold text-white text-xs">Pattern Confidence Info</p>
-                  <p className="text-[11px] text-slate-200 leading-normal whitespace-normal">
+                  <p className="text-[12px] text-slate-200 leading-normal whitespace-normal">
                     {confidenceExplanation}
                   </p>
-                  <p className="text-[10px] text-slate-300 italic pt-1 border-t border-slate-700 whitespace-normal">
+                  <p className="text-[11px] text-slate-300 italic pt-1 border-t border-slate-700 whitespace-normal">
                     This measures statistical frequency in uploaded statements. It does NOT mean high probability of abuse.
                   </p>
                 </div>
@@ -152,7 +152,7 @@ export const AIInsight: React.FC<AIInsightProps> = ({
           <div className="space-y-4">
             {/* 1. Pattern */}
             <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 block">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 block">
                 Observed Pattern
               </span>
               <p className="text-sm font-bold text-slate-900 leading-snug">
@@ -163,7 +163,7 @@ export const AIInsight: React.FC<AIInsightProps> = ({
             {/* 2. Context */}
             {context && (
               <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-4 space-y-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
                   User Context Connected
                 </span>
                 <p className="text-sm text-slate-800 leading-snug font-medium">
@@ -174,7 +174,7 @@ export const AIInsight: React.FC<AIInsightProps> = ({
 
             {/* 3. Interpretation */}
             <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800 block">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-800 block">
                 Synthesis & Reflection
               </span>
               <p className="text-sm text-indigo-950 font-semibold leading-relaxed">

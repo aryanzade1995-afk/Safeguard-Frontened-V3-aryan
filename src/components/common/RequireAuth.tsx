@@ -53,7 +53,7 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           </button>
           <button
             onClick={() => openAuthModal('signup', location.pathname)}
-            className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-[#FAF9F6] text-slate-700 font-bold text-sm rounded-xl border border-[#EDECE8] transition-all cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-sm rounded-xl border border-stone-200 transition-all cursor-pointer"
           >
             Create an account
           </button>

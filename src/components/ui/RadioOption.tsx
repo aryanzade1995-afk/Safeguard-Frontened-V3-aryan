@@ -66,7 +66,7 @@ export const RadioOption: React.FC<RadioOptionProps> = ({
             {title}
           </label>
           {badgeText && (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
               {badgeText}
             </span>
           )}

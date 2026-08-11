@@ -156,9 +156,9 @@ export const AuthModal: React.FC = () => {
       />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-md bg-white rounded-[28px] border border-[#EDECE8] shadow-2xl z-10 overflow-hidden transform transition-all animate-scale-up space-y-6 p-6 sm:p-8">
+      <div className="relative w-full max-w-md bg-white rounded-[28px] border border-stone-200 shadow-2xl z-10 overflow-hidden transform transition-all animate-scale-up space-y-6 p-6 sm:p-8">
         {/* Accent Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800" />
 
         {/* Header */}
         <div className="flex items-start justify-between pt-1">
@@ -190,7 +190,7 @@ export const AuthModal: React.FC = () => {
               }}
               className={`py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'login'
-                  ? 'bg-white text-indigo-950 shadow-xs border border-stone-200'
+                  ? 'bg-white text-indigo-900 shadow-xs border border-stone-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -204,7 +204,7 @@ export const AuthModal: React.FC = () => {
               }}
               className={`py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'signup'
-                  ? 'bg-white text-indigo-950 shadow-xs border border-stone-200'
+                  ? 'bg-white text-indigo-900 shadow-xs border border-stone-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -231,7 +231,7 @@ export const AuthModal: React.FC = () => {
             <button
               type="button"
               onClick={backToLogin}
-              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to log in</span>
@@ -251,7 +251,7 @@ export const AuthModal: React.FC = () => {
                   placeholder="user@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -289,7 +289,7 @@ export const AuthModal: React.FC = () => {
                       placeholder="Maya Sharma"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                      className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -307,7 +307,7 @@ export const AuthModal: React.FC = () => {
                     placeholder="user@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                    className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -324,7 +324,7 @@ export const AuthModal: React.FC = () => {
                         setMode('forgotPassword');
                         setErrorMessage('');
                       }}
-                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                      className="text-[12px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
                     >
                       Forgot password?
                     </button>
@@ -339,7 +339,7 @@ export const AuthModal: React.FC = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-11 py-3 bg-[#FAF9F6] border border-[#EDECE8] rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
+                    className="w-full pl-10 pr-11 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all placeholder:text-slate-400"
                   />
                   <button
                     type="button"
@@ -351,7 +351,7 @@ export const AuthModal: React.FC = () => {
                   </button>
                 </div>
                 {activeTab === 'signup' && (
-                  <p className="text-[11px] text-slate-400 leading-relaxed">At least 6 characters.</p>
+                  <p className="text-[12px] text-slate-400 leading-relaxed">At least 6 characters.</p>
                 )}
               </div>
 
@@ -372,16 +372,16 @@ export const AuthModal: React.FC = () => {
             </form>
 
             <div className="flex items-center space-x-3">
-              <div className="h-px flex-1 bg-[#EDECE8]" />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">or</span>
-              <div className="h-px flex-1 bg-[#EDECE8]" />
+              <div className="h-px flex-1 bg-stone-200" />
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">or</span>
+              <div className="h-px flex-1 bg-stone-200" />
             </div>
 
             <button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-sm rounded-xl border border-[#EDECE8] transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2.5 disabled:opacity-60 shadow-xs"
+              className="w-full py-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-sm rounded-xl border border-stone-200 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2.5 disabled:opacity-60 shadow-xs"
             >
               <GoogleIcon className="w-4 h-4" />
               <span>{googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}</span>
@@ -390,7 +390,7 @@ export const AuthModal: React.FC = () => {
         )}
 
         {/* Footer */}
-        <div className="pt-2 border-t border-[#EDECE8] flex items-center justify-end text-xs text-slate-500">
+        <div className="pt-2 border-t border-stone-200 flex items-center justify-end text-xs text-slate-500">
           <div className="flex items-center space-x-1 text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Secured by Supabase Auth</span>

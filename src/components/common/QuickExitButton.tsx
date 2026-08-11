@@ -41,7 +41,7 @@ export const QuickExitButton: React.FC<{ compact?: boolean }> = ({ compact = fal
     >
       <ShieldAlert className="w-4 h-4 shrink-0 animate-pulse" />
       <span>Quick Exit</span>
-      <span className="hidden sm:inline-block text-[10px] bg-red-800/80 px-1.5 py-0.5 rounded text-red-100 font-mono">
+      <span className="hidden sm:inline-block text-[11px] bg-red-800/80 px-1.5 py-0.5 rounded text-red-100 font-mono">
         ESC x2
       </span>
     </button>

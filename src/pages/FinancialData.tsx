@@ -25,6 +25,7 @@ import { Badge } from '../components/ui/Badge';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
 import { BackButton } from '../components/common/BackButton';
+import { analyzeFinancialStatement } from '../services/financialHealthService';
 
 type FileState = 'empty' | 'uploading' | 'processing' | 'successful' | 'invalid' | 'error';
 
@@ -38,7 +39,7 @@ interface UploadedFileInfo {
 export const FinancialData: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { transactions, isDemoMode, resetDemo } = useSafeguard();
+  const { transactions, isDemoMode, resetDemo, user } = useSafeguard();
 
   const [fileState, setFileState] = useState<FileState>('empty');
   const [fileInfo, setFileInfo] = useState<UploadedFileInfo | null>(null);
@@ -66,27 +67,50 @@ export const FinancialData: React.FC = () => {
       return;
     }
 
-    // Simulate uploading -> processing -> successful
+    if (!user?.id) {
+      setFileState('invalid');
+      setErrorMessage('Please sign in to analyze a bank statement.');
+      addToast({
+        title: 'Sign In Required',
+        description: 'Please sign in to analyze a bank statement.',
+        type: 'warning',
+      });
+      return;
+    }
+
     setFileState('uploading');
     setErrorMessage('');
 
+    // Brief "uploading" beat before the real request, matching the
+    // existing two-phase (uploading -> processing) visual pacing.
     setTimeout(() => {
       setFileState('processing');
-      setTimeout(() => {
-        const sizeFormatted = (file.size / 1024).toFixed(1) + ' KB';
-        setFileInfo({
-          name: file.name,
-          size: sizeFormatted,
-          type: file.name.endsWith('.pdf') ? 'PDF Bank Statement' : 'CSV Statement',
-          isSample: false,
+      analyzeFinancialStatement(file, user.id)
+        .then((result) => {
+          const sizeFormatted = (file.size / 1024).toFixed(1) + ' KB';
+          setFileInfo({
+            name: result.filename,
+            size: sizeFormatted,
+            type: file.name.endsWith('.pdf') ? 'PDF Bank Statement' : 'CSV Statement',
+            isSample: false,
+          });
+          setFileState('successful');
+          addToast({
+            title: 'Statement Analyzed',
+            description: 'Your bank statement has been processed and analyzed.',
+            type: 'success',
+          });
+        })
+        .catch((err) => {
+          const message = err instanceof Error ? err.message : 'Could not analyze this statement. Please try again.';
+          setFileState('invalid');
+          setErrorMessage(message);
+          addToast({
+            title: "We couldn't process that file",
+            description: message,
+            type: 'danger',
+          });
         });
-        setFileState('successful');
-        addToast({
-          title: 'File Processed Locally',
-          description: 'Statement parsed successfully inside browser memory.',
-          type: 'success',
-        });
-      }, 1000);
     }, 800);
   };
 
@@ -168,7 +192,7 @@ export const FinancialData: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-fade-in py-4 sm:py-6">
-      <BackButton fallbackPath="/assessment" />
+      <BackButton fallbackPath="/dashboard" forceFallback />
       {/* TOP HEADER */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-indigo-600">
@@ -256,7 +280,7 @@ export const FinancialData: React.FC = () => {
               )}
             </div>
 
-            <p className="text-[11px] text-[#9CA3AF] mt-6 pt-4 border-t border-[#EDECE8]">
+            <p className="text-[12px] text-[#9CA3AF] mt-6 pt-4 border-t border-[#EDECE8]">
               Your financial data is sensitive. Only upload information you're comfortable sharing.
             </p>
           </div>
@@ -291,7 +315,7 @@ export const FinancialData: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <h4 className="font-bold text-slate-900 text-sm">{fileInfo.name}</h4>
                     {fileInfo.isSample && (
-                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full">
+                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full">
                         Sample Data
                       </span>
                     )}
@@ -379,7 +403,7 @@ export const FinancialData: React.FC = () => {
           <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wide">
             Sample Transaction Breakdown
           </h3>
-          <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full">
+          <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[12px] font-bold rounded-full">
             Fictional sample data
           </span>
         </div>
@@ -457,7 +481,7 @@ export const FinancialData: React.FC = () => {
       {/* BOTTOM ACTIONS */}
       <div className="pt-4 border-t border-[#EDECE8] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <button
-          onClick={() => navigate('/assessment')}
+          onClick={() => navigate('/dashboard')}
           className="px-5 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />

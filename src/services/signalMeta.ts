@@ -58,22 +58,22 @@ interface SeverityBadge {
 }
 
 // Reuses the exact badge classes already present in the existing breakdown
-// cards (amber / indigo / stone variants) — only the copy is data-driven.
+// cards (clay / forest / linen variants) — only the copy is data-driven.
 export const SEVERITY_BADGE: Record<AnalysisSeverity, SeverityBadge> = {
   high: {
     label: 'High severity',
-    className: 'px-2.5 py-0.5 bg-amber-50 text-amber-800 text-[11px] font-bold rounded-full',
+    className: 'px-2.5 py-0.5 bg-amber-50 text-amber-900 text-[12px] font-bold rounded-full',
   },
   medium: {
     label: 'Medium severity',
-    className: 'px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full',
+    className: 'px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[12px] font-bold rounded-full',
   },
   low: {
     label: 'Low severity',
-    className: 'px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full',
+    className: 'px-2.5 py-0.5 bg-stone-100 text-slate-600 text-[12px] font-bold rounded-full',
   },
   none: {
     label: 'Low severity',
-    className: 'px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full',
+    className: 'px-2.5 py-0.5 bg-stone-100 text-slate-600 text-[12px] font-bold rounded-full',
   },
 };

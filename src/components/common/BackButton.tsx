@@ -6,17 +6,30 @@ interface BackButtonProps {
   fallbackPath?: string;
   className?: string;
   label?: string;
+  /**
+   * When true, always navigates to `fallbackPath` instead of using browser
+   * history — for pages reachable via multiple different prior routes where
+   * Back must deterministically land on one specific page regardless of how
+   * the user arrived. Defaults to false (existing history-aware behavior).
+   */
+  forceFallback?: boolean;
 }
 
 export const BackButton: React.FC<BackButtonProps> = ({
   fallbackPath = '/',
   className = '',
-  label = 'Back'
+  label = 'Back',
+  forceFallback = false,
 }) => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    if (window.history.state && typeof window.history.state.idx === 'number' && window.history.state.idx > 0) {
+    if (
+      !forceFallback &&
+      window.history.state &&
+      typeof window.history.state.idx === 'number' &&
+      window.history.state.idx > 0
+    ) {
       navigate(-1);
     } else {
       navigate(fallbackPath);

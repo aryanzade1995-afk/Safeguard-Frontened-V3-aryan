@@ -2,8 +2,8 @@ import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import { config } from './config.js';
 import { OllamaError, pingOllama } from './ollamaClient.js';
-import { detectSignals } from './patternDetector.js';
-import { computeRisk } from './riskEngine.js';
+import { runAnalysisPipeline } from './analysisPipeline.js';
+import { supabaseAdmin, verifyAccessToken, AuthVerificationError } from './supabaseAdmin.js';
 
 const app = express();
 app.use(cors());
@@ -11,12 +11,22 @@ app.use(express.json({ limit: '100kb' }));
 
 const MAX_STATEMENT_LENGTH = 8000;
 
+function validateStatement(statement: unknown): string | null {
+  if (typeof statement !== 'string' || statement.trim().length === 0) {
+    return '"statement" is required and must be a non-empty string.';
+  }
+  if (statement.length > MAX_STATEMENT_LENGTH) {
+    return `"statement" exceeds the maximum length of ${MAX_STATEMENT_LENGTH} characters.`;
+  }
+  return null;
+}
+
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
     success: true,
     name: 'safeguard-backend',
     version: '0.0.1',
-    endpoints: ['GET /api', 'GET /api/health', 'POST /api/analyze'],
+    endpoints: ['GET /api', 'GET /api/health', 'POST /api/analyze', 'POST /api/assessment'],
   });
 });
 
@@ -37,25 +47,71 @@ app.post('/api/analyze', async (req: Request, res: Response, next: NextFunction)
   try {
     const { statement } = req.body ?? {};
 
-    if (typeof statement !== 'string' || statement.trim().length === 0) {
-      res.status(400).json({ success: false, error: '"statement" is required and must be a non-empty string.' });
+    const validationError = validateStatement(statement);
+    if (validationError) {
+      res.status(400).json({ success: false, error: validationError });
       return;
     }
 
-    if (statement.length > MAX_STATEMENT_LENGTH) {
-      res.status(400).json({
-        success: false,
-        error: `"statement" exceeds the maximum length of ${MAX_STATEMENT_LENGTH} characters.`,
-      });
-      return;
-    }
-
-    const signals = await detectSignals(statement.trim());
-    const risk = computeRisk(signals);
+    const analysis = await runAnalysisPipeline(statement.trim());
 
     res.status(200).json({
       success: true,
-      analysis: { signals, risk },
+      analysis,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/assessment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { statement, answers } = req.body ?? {};
+
+    const validationError = validateStatement(statement);
+    if (validationError) {
+      res.status(400).json({ success: false, error: validationError });
+      return;
+    }
+    if (answers !== undefined && (typeof answers !== 'object' || answers === null || Array.isArray(answers))) {
+      res.status(400).json({ success: false, error: '"answers" must be an object of question id to answer string.' });
+      return;
+    }
+
+    let userId: string;
+    try {
+      userId = await verifyAccessToken(req.header('authorization'));
+    } catch (err) {
+      if (err instanceof AuthVerificationError) {
+        const status = err.code === 'NOT_CONFIGURED' ? 500 : 401;
+        res.status(status).json({ success: false, error: err.message });
+        return;
+      }
+      throw err;
+    }
+
+    const analysis = await runAnalysisPipeline(statement.trim());
+
+    const { data, error } = await supabaseAdmin
+      .from('assessments')
+      .insert({ user_id: userId, answers: answers ?? {}, analysis })
+      .select()
+      .single();
+
+    if (error || !data) {
+      res.status(502).json({ success: false, error: error?.message || 'Could not save your assessment.' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      assessment: {
+        id: data.id,
+        userId: data.user_id,
+        answers: data.answers,
+        analysis: data.analysis,
+        createdAt: data.created_at,
+      },
     });
   } catch (err) {
     next(err);

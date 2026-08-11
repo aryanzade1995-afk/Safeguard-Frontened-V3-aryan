@@ -32,12 +32,6 @@ export interface Transaction {
   userNote?: string;
 }
 
-export interface AssessmentAnswer {
-  questionId: string;
-  value: string | number;
-  notes?: string;
-}
-
 export interface QuestionnaireSection {
   id: string;
   title: string;
@@ -124,4 +118,125 @@ export interface Assessment {
   answers: Record<string, string>;
   analysis: Analysis;
   createdAt: string;
+}
+
+// POST /api/assessment request/response contract (backend/src/index.ts).
+// Deliberately decoupled from the raw `Analysis` shape at this network
+// boundary — a future model change only ever needs to touch `Analysis`
+// itself (or nothing at all); this envelope stays stable.
+export interface AssessmentSubmissionRequest {
+  statement: string;
+  answers: Record<string, string>;
+}
+
+export interface AssessmentSubmissionSuccessResponse {
+  success: true;
+  assessment: Assessment;
+}
+
+export interface AssessmentSubmissionErrorResponse {
+  success: false;
+  error: string;
+}
+
+export type AssessmentSubmissionResponse =
+  | AssessmentSubmissionSuccessResponse
+  | AssessmentSubmissionErrorResponse;
+
+// GET /api/financial/health contract (FastAPI backend, see
+// ../qwen4b/backend/main.py). Field names mirror the backend response
+// exactly — this page never recomputes financial figures on the frontend.
+export type CashFlowStatus = 'positive' | 'break_even' | 'spending_exceeds_income';
+export type SpendingTrendStatus = 'increasing' | 'decreasing' | 'stable' | 'insufficient_data';
+export type IndicatorStatus = 'observed' | 'none_observed';
+
+export interface FinancialHealthSummary {
+  monthly_income: number;
+  monthly_spending: number;
+  average_monthly_spending: number;
+  spending_utilization_percent: number | null;
+  cash_flow_status: CashFlowStatus;
+  spending_trend_status: SpendingTrendStatus;
+  spending_change_percent: number | null;
+}
+
+export interface FinancialHealthIndicator {
+  count: number;
+  total: number;
+  income_share_percent: number | null;
+  status: IndicatorStatus;
+}
+
+export interface FinancialHealthIndicators {
+  cash_withdrawals: FinancialHealthIndicator;
+  recurring_transfers: FinancialHealthIndicator;
+}
+
+export interface MonthlySpendingPoint {
+  month: string;
+  amount: number;
+  income: number;
+  month_key: string;
+}
+
+export interface CashWithdrawalPoint {
+  month: string;
+  amount: number;
+  month_key: string;
+}
+
+export interface TransferPoint {
+  month: string;
+  amount: number;
+  count: number;
+  month_key: string;
+}
+
+export interface MonthlySummaryPoint {
+  month: string;
+  income: number;
+  spending: number;
+  utilization_percent: number;
+  month_key: string;
+}
+
+export interface FinancialHealthCharts {
+  monthly_spending: MonthlySpendingPoint[];
+  cash_withdrawals: CashWithdrawalPoint[];
+  transfers: TransferPoint[];
+  monthly_summary: MonthlySummaryPoint[];
+}
+
+export interface FinancialPatternItem {
+  type: string;
+  title: string;
+  confidence: number;
+  description: string;
+}
+
+export interface FinancialHealthData {
+  filename: string | null;
+  created_at: string | null;
+  date_range: { start: string; end: string } | null;
+  summary: FinancialHealthSummary;
+  indicators: FinancialHealthIndicators;
+  charts: FinancialHealthCharts;
+  patterns: FinancialPatternItem[];
+  disclaimer: string;
+}
+
+export interface FinancialHealthResponse {
+  status: 'success';
+  found: boolean;
+  data: FinancialHealthData | null;
+}
+
+// POST /api/financial/analyze success response (multipart upload).
+// financial_analysis_id/created_at come straight from the saved Supabase
+// row — never generated or guessed on the frontend.
+export interface FinancialAnalyzeSuccessResponse {
+  status: 'success';
+  filename: string;
+  financial_analysis_id: string;
+  created_at: string;
 }

@@ -67,8 +67,11 @@ export interface RadialProgressProps {
   size?: number;
   strokeWidth?: number;
   variant?: 'indigo' | 'emerald' | 'amber';
+  /** Overrides the entire center label — use sparingly; the default split
+   *  score/maxLabel layout is what keeps this aligned at any size. */
   label?: string;
   sublabel?: string;
+  maxLabel?: string;
 }
 
 export const RadialProgress: React.FC<RadialProgressProps> = ({
@@ -78,34 +81,48 @@ export const RadialProgress: React.FC<RadialProgressProps> = ({
   variant = 'indigo',
   label,
   sublabel,
+  maxLabel = '/100',
 }) => {
   const normalizedValue = Math.min(100, Math.max(0, value));
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (normalizedValue / 100) * circumference;
 
-  const colorMap = {
-    indigo: '#3730A3',
-    emerald: '#059669',
-    amber: '#D97706',
+  const gradientStops: Record<'indigo' | 'emerald' | 'amber', [string, string]> = {
+    indigo: ['#818CF8', '#3730A3'],
+    emerald: ['#6EE7B7', '#047857'],
+    amber: ['#FCD34D', '#B45309'],
   };
+  const [gradFrom, gradTo] = gradientStops[variant];
+  const gradientId = `radial-grad-${variant}-${size}-${strokeWidth}`;
+
+  // Font size scales with the ring's diameter so the score never looks
+  // cramped or oversized regardless of where this component is placed.
+  const scoreFontSize = Math.max(18, Math.round(size * 0.26));
+  const maxLabelFontSize = Math.max(10, Math.round(scoreFontSize * 0.42));
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90">
+    <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      {/* Soft ambient glow behind the ring for a bit of depth */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-[6%] rounded-full blur-xl opacity-40"
+        style={{ background: `radial-gradient(circle, ${gradTo}30, transparent 72%)` }}
+      />
+
+      <svg width={size} height={size} className="-rotate-90 relative">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={gradFrom} />
+            <stop offset="100%" stopColor={gradTo} />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#F1F0ED" strokeWidth={strokeWidth} fill="transparent" />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#F5F5F4"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={colorMap[variant]}
+          stroke={`url(#${gradientId})`}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -114,11 +131,36 @@ export const RadialProgress: React.FC<RadialProgressProps> = ({
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-2xl font-bold text-slate-900 tracking-tight">
-          {label ?? `${Math.round(normalizedValue)}%`}
-        </span>
-        {sublabel && <span className="text-xs text-slate-500 font-medium">{sublabel}</span>}
+
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3">
+        {label ? (
+          <span
+            className="font-extrabold text-slate-900 tracking-tight leading-none"
+            style={{ fontSize: scoreFontSize }}
+          >
+            {label}
+          </span>
+        ) : (
+          <div className="flex items-baseline">
+            <span
+              className="font-extrabold text-slate-900 tracking-tight leading-none"
+              style={{ fontSize: scoreFontSize }}
+            >
+              {Math.round(normalizedValue)}
+            </span>
+            <span
+              className="font-bold text-slate-400 leading-none ml-0.5"
+              style={{ fontSize: maxLabelFontSize }}
+            >
+              {maxLabel}
+            </span>
+          </div>
+        )}
+        {sublabel && (
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1.5 leading-tight max-w-[85%]">
+            {sublabel}
+          </span>
+        )}
       </div>
     </div>
   );

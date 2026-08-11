@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart2,
-  TrendingUp,
   TrendingDown,
   Repeat,
   Info,
@@ -10,33 +9,86 @@ import {
   ArrowLeft,
   DollarSign,
   AlertCircle,
-  HelpCircle,
-  CheckCircle2,
-  Lock,
-  PieChart,
-  ShieldAlert,
-  Sparkles,
+  Loader2,
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
+import { useSafeguard } from '../context/SafeguardContext';
 import { AIInsight } from '../components/common/AIInsight';
 import { BackButton } from '../components/common/BackButton';
+import { getFinancialHealth } from '../services/financialHealthService';
+import { FinancialHealthData, MonthlySpendingPoint } from '../types';
 
-// Fictional 6-month spending data
-const SPENDING_DATA = [
-  { month: 'Nov 2025', spending: 28400, withdrawals: 12000 },
-  { month: 'Dec 2025', spending: 35200, withdrawals: 18500 },
-  { month: 'Jan 2026', spending: 30100, withdrawals: 14000 },
-  { month: 'Feb 2026', spending: 31800, withdrawals: 20000 },
-  { month: 'Mar 2026', spending: 38500, withdrawals: 22000 },
-  { month: 'Apr 2026', spending: 31800, withdrawals: 19500 },
-];
+// Maps a set of real chart points onto the existing 500x150 line-chart
+// viewBox — pure coordinate/rendering math, not a financial calculation.
+function buildLineChartGeometry(points: MonthlySpendingPoint[]) {
+  const amounts = points.map((p) => p.amount);
+  const min = Math.min(...amounts, 0);
+  const max = Math.max(...amounts, 1);
+  const range = max - min || 1;
+  const n = points.length;
+
+  const coords = points.map((p, i) => {
+    const x = n <= 1 ? 250 : (i / (n - 1)) * 500;
+    const y = 140 - ((p.amount - min) / range) * 130;
+    return { x, y, point: p };
+  });
+
+  const polylinePoints = coords.map((c) => `${c.x},${c.y}`).join(' ');
+  const polygonPoints =
+    coords.length > 0
+      ? `0,150 ${polylinePoints} ${coords[coords.length - 1].x},150`
+      : '';
+
+  return { coords, polylinePoints, polygonPoints };
+}
+
+const CONFIDENCE_BADGE = (confidence: number) => {
+  if (confidence >= 0.9) {
+    return { label: 'High Confidence Pattern', className: 'px-3 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-100' };
+  }
+  if (confidence >= 0.7) {
+    return { label: 'Moderate Signal', className: 'px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100' };
+  }
+  return { label: 'Low Signal', className: 'px-3 py-1 bg-stone-100 text-slate-600 text-xs font-bold rounded-full border border-stone-200' };
+};
+
+const INDICATOR_STATUS_LABEL: Record<string, string> = {
+  observed: 'Observed',
+  none_observed: 'None observed',
+};
 
 export const PatternAnalysis: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const [hoveredPoint, setHoveredPoint] = useState<{ month: string; spending: number } | null>(null);
+  const { user } = useSafeguard();
+  const [hoveredPoint, setHoveredPoint] = useState<{ month: string; amount: number } | null>(null);
+
+  const [health, setHealth] = useState<FinancialHealthData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+    getFinancialHealth(user.id)
+      .then((data) => {
+        if (isMounted) setHealth(data);
+      })
+      .catch((err) => {
+        if (isMounted) setError(err instanceof Error ? err.message : 'Could not load your financial analysis.');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const handleContinue = () => {
     addToast({
@@ -47,18 +99,72 @@ export const PatternAnalysis: React.FC = () => {
     navigate('/questionnaire');
   };
 
-  const handleSkipQuestionnaire = () => {
-    addToast({
-      title: 'Questionnaire Skipped',
-      description: 'Navigating directly to your final reflection report.',
-      type: 'info',
-    });
-    navigate('/results');
-  };
+  const formatCurrency = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+  const formatPercent = (n: number | null) => (n === null || n === undefined ? '—' : `${n}%`);
+
+  // LOADING STATE
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+        <p className="text-sm text-slate-500 font-medium">Loading your financial analysis...</p>
+      </div>
+    );
+  }
+
+  // ERROR STATE
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center mx-auto text-rose-600 shadow-sm">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Couldn't load your financial analysis</h2>
+        <p className="text-sm text-slate-500">{error}</p>
+        <button
+          onClick={() => navigate('/financial-data')}
+          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+        >
+          Back to financial data
+        </button>
+      </div>
+    );
+  }
+
+  // EMPTY STATE — no saved financial analysis yet
+  if (!health) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-10 animate-fade-in py-4 sm:py-6">
+        <BackButton fallbackPath="/financial-data" forceFallback />
+        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 sm:p-10 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+            <BarChart2 className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">No financial analysis yet</h2>
+          <p className="text-sm text-[#6B7280] max-w-md mx-auto leading-relaxed">
+            Upload or select financial data first, and your pattern overview will appear here.
+          </p>
+          <button
+            onClick={() => navigate('/financial-data')}
+            className="inline-flex items-center space-x-1.5 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+          >
+            <span>Go to financial data</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { summary, indicators, charts, patterns, disclaimer } = health;
+  const { coords: linePoints, polylinePoints, polygonPoints } = buildLineChartGeometry(charts.monthly_spending);
+  const withdrawalMax = Math.max(...charts.cash_withdrawals.map((p) => p.amount), 1);
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 animate-fade-in py-4 sm:py-6">
-      <BackButton fallbackPath="/financial-data" />
+      <BackButton fallbackPath="/financial-data" forceFallback />
       {/* HEADER */}
       <div className="space-y-3 border-b border-[#EDECE8] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -80,42 +186,102 @@ export const PatternAnalysis: React.FC = () => {
         </p>
       </div>
 
-      {/* SUMMARY CARDS (4 cards with fictional data) */}
+      {/* SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-            Transactions analyzed
+          <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
+            Monthly spending
           </span>
-          <div className="text-2xl font-extrabold text-[#1A1A1A]">184</div>
-          <span className="text-[10px] text-slate-400">Past 6 months</span>
+          <div className="text-2xl font-extrabold text-[#1A1A1A]">{formatCurrency(summary.monthly_spending)}</div>
+          <span className="text-[11px] text-slate-400">
+            {summary.spending_trend_status === 'insufficient_data'
+              ? 'Not enough history yet'
+              : `${
+                  summary.spending_trend_status === 'increasing'
+                    ? 'Trending up'
+                    : summary.spending_trend_status === 'decreasing'
+                      ? 'Trending down'
+                      : 'Stable trend'
+                }${
+                  summary.spending_change_percent !== null && summary.spending_change_percent !== undefined
+                    ? ` (${summary.spending_change_percent > 0 ? '+' : ''}${summary.spending_change_percent}%)`
+                    : ''
+                }`}
+          </span>
         </div>
 
         {/* Card 2 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
             Monthly income
           </span>
-          <div className="text-2xl font-extrabold text-indigo-600">₹45,000</div>
-          <span className="text-[10px] text-slate-400">Regular payroll credit</span>
+          <div className="text-2xl font-extrabold text-indigo-600">{formatCurrency(summary.monthly_income)}</div>
+          <span className="text-[11px] text-slate-400">
+            {summary.cash_flow_status === 'positive' && 'Positive cash flow'}
+            {summary.cash_flow_status === 'break_even' && 'Break-even'}
+            {summary.cash_flow_status === 'spending_exceeds_income' && 'Spending exceeds income'}
+          </span>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
             Average monthly spending
           </span>
-          <div className="text-2xl font-extrabold text-[#1A1A1A]">₹31,800</div>
-          <span className="text-[10px] text-slate-400">70.6% income utilization</span>
+          <div className="text-2xl font-extrabold text-[#1A1A1A]">{formatCurrency(summary.average_monthly_spending)}</div>
+          <span className="text-[11px] text-slate-400">
+            {formatPercent(summary.spending_utilization_percent)} income utilization
+          </span>
         </div>
 
         {/* Card 4 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
             Patterns identified
           </span>
-          <div className="text-2xl font-extrabold text-amber-600">3</div>
-          <span className="text-[10px] text-slate-400">Signals for reflection</span>
+          <div className="text-2xl font-extrabold text-amber-600">{patterns.length}</div>
+          <span className="text-[11px] text-slate-400">Signals for reflection</span>
+        </div>
+      </div>
+
+      {/* SALARY -> WITHDRAWAL -> TRANSFER TIMELINE (purely illustrative, unchanged) */}
+      <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 sm:p-6 shadow-xs">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-4">
+          Typical flow observed in your data
+        </span>
+        <div className="flex items-center">
+          <div className="flex flex-col items-center space-y-2 flex-1">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800">Salary</span>
+            <span className="text-[11px] text-slate-400">Deposit received</span>
+          </div>
+
+          <div className="flex-1 h-px bg-stone-200 relative -mt-8">
+            <ArrowRight className="w-3.5 h-3.5 text-stone-300 absolute right-0 -top-1.5" />
+          </div>
+
+          <div className="flex flex-col items-center space-y-2 flex-1">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <TrendingDown className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800">Withdrawal</span>
+            <span className="text-[11px] text-slate-400">Cash outflow</span>
+          </div>
+
+          <div className="flex-1 h-px bg-stone-200 relative -mt-8">
+            <ArrowRight className="w-3.5 h-3.5 text-stone-300 absolute right-0 -top-1.5" />
+          </div>
+
+          <div className="flex flex-col items-center space-y-2 flex-1">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Repeat className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800">Transfer</span>
+            <span className="text-[11px] text-slate-400">Recurring outflow</span>
+          </div>
         </div>
       </div>
 
@@ -125,75 +291,67 @@ export const PatternAnalysis: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-[#1A1A1A]">Monthly spending trend</h3>
             <p className="text-xs text-[#6B7280] mt-0.5">
-              6-month historical spending trajectory based on provided sample data
+              Historical spending trajectory based on your financial data
             </p>
           </div>
           {hoveredPoint && (
             <div className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-xs font-bold text-indigo-700 animate-fade-in">
-              {hoveredPoint.month}: ₹{hoveredPoint.spending.toLocaleString('en-IN')}
+              {hoveredPoint.month}: {formatCurrency(hoveredPoint.amount)}
             </div>
           )}
         </div>
 
-        {/* SVG Interactive Line Chart */}
-        <div className="relative pt-6 pb-2">
-          <div className="h-44 w-full flex items-end justify-between gap-2 relative">
-            {/* Background horizontal gridlines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-              <div className="border-b border-slate-300 w-full"></div>
-              <div className="border-b border-slate-300 w-full"></div>
-              <div className="border-b border-slate-300 w-full"></div>
-            </div>
+        {charts.monthly_spending.length === 0 ? (
+          <p className="text-sm text-slate-500">Not enough monthly data to chart a trend yet.</p>
+        ) : (
+          <div className="relative pt-6 pb-2">
+            <div className="h-44 w-full flex items-end justify-between gap-2 relative">
+              {/* Background horizontal gridlines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+                <div className="border-b border-slate-300 w-full"></div>
+                <div className="border-b border-slate-300 w-full"></div>
+                <div className="border-b border-slate-300 w-full"></div>
+              </div>
 
-            {/* SVG Line & Points */}
-            <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 150">
-              <defs>
-                <linearGradient id="spendingGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              {/* Polygon Fill */}
-              <polygon
-                points="0,150 0,90 100,30 200,70 300,50 400,10 500,50 500,150"
-                fill="url(#spendingGrad)"
-              />
-              {/* Polyline */}
-              <polyline
-                fill="none"
-                stroke="#4F46E5"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                points="0,90 100,30 200,70 300,50 400,10 500,50"
-              />
-            </svg>
+              {/* SVG Line & Points */}
+              <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 150">
+                <defs>
+                  <linearGradient id="spendingGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <polygon points={polygonPoints} fill="url(#spendingGrad)" />
+                <polyline
+                  fill="none"
+                  stroke="#4F46E5"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={polylinePoints}
+                />
+              </svg>
 
-            {/* Interactive Circles / Data Points */}
-            {SPENDING_DATA.map((d, idx) => {
-              // Y position mapping (min ~28000 -> y=90, max ~38500 -> y=10)
-              const percents = [40, 80, 50, 65, 95, 65];
-              return (
+              {/* Interactive Circles / Data Points */}
+              {linePoints.map((c) => (
                 <div
-                  key={d.month}
-                  onMouseEnter={() => setHoveredPoint({ month: d.month, spending: d.spending })}
+                  key={c.point.month_key}
+                  onMouseEnter={() => setHoveredPoint({ month: c.point.month, amount: c.point.amount })}
                   onMouseLeave={() => setHoveredPoint(null)}
                   className="flex-1 flex flex-col items-center justify-end h-full z-10 group cursor-pointer"
                 >
                   <div className="relative flex flex-col items-center mb-2">
-                    {/* Tooltip on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md mb-1 whitespace-nowrap shadow-md pointer-events-none">
-                      ₹{d.spending.toLocaleString('en-IN')}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-md mb-1 whitespace-nowrap shadow-md pointer-events-none">
+                      {formatCurrency(c.point.amount)}
                     </div>
-                    {/* Point Circle */}
                     <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-600 group-hover:scale-125 group-hover:bg-indigo-600 transition-all shadow-xs"></div>
                   </div>
-                  <span className="text-[11px] font-medium text-slate-500 mt-2">{d.month.split(' ')[0]}</span>
+                  <span className="text-[12px] font-medium text-slate-500 mt-2">{c.point.month.split(' ')[0]}</span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* WITHDRAWAL PATTERN & TRANSFER PATTERN GRID */}
@@ -203,43 +361,41 @@ export const PatternAnalysis: React.FC = () => {
           <div>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 text-base">Cash withdrawal pattern</h3>
-              <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                Observation
+              <span className="text-[11px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                {INDICATOR_STATUS_LABEL[indicators.cash_withdrawals.status]}
               </span>
             </div>
             <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-              Several months show higher-than-usual cash withdrawals.
+              {indicators.cash_withdrawals.count} withdrawal{indicators.cash_withdrawals.count === 1 ? '' : 's'} · {formatCurrency(indicators.cash_withdrawals.total)} total · {formatPercent(indicators.cash_withdrawals.income_share_percent)} of income
             </p>
           </div>
 
           {/* Bar chart representation */}
-          <div className="space-y-2 pt-2">
-            {SPENDING_DATA.map((d) => {
-              const maxW = 25000;
-              const pct = Math.min(100, Math.round((d.withdrawals / maxW) * 100));
-              const isHigh = d.withdrawals >= 19000;
-              return (
-                <div key={d.month} className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-600 font-medium">{d.month}</span>
-                    <span className={`font-mono font-bold ${isHigh ? 'text-amber-700' : 'text-slate-700'}`}>
-                      ₹{d.withdrawals.toLocaleString('en-IN')}
-                    </span>
+          {charts.cash_withdrawals.length === 0 ? (
+            <p className="text-xs text-slate-400 pt-2">No cash withdrawals observed in this data.</p>
+          ) : (
+            <div className="space-y-2 pt-2">
+              {charts.cash_withdrawals.map((d) => {
+                const pct = Math.min(100, Math.round((d.amount / withdrawalMax) * 100));
+                return (
+                  <div key={d.month_key} className="space-y-1">
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className="text-slate-600 font-medium">{d.month}</span>
+                      <span className="font-mono font-bold text-slate-700">{formatCurrency(d.amount)}</span>
+                    </div>
+                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 bg-indigo-400"
+                        style={{ width: `${pct}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isHigh ? 'bg-amber-500' : 'bg-indigo-400'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
-          <p className="text-[11px] text-[#9CA3AF] italic pt-2 border-t border-[#EDECE8]">
+          <p className="text-[12px] text-[#9CA3AF] italic pt-2 border-t border-[#EDECE8]">
             Note: Cash withdrawals are logged neutrally. High cash usage can occur for routine daily expenditures.
           </p>
         </div>
@@ -254,7 +410,7 @@ export const PatternAnalysis: React.FC = () => {
                 </div>
                 <h3 className="font-bold text-slate-900 text-base">Recurring transfers</h3>
               </div>
-              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
                 Fixed Outflow
               </span>
             </div>
@@ -263,21 +419,27 @@ export const PatternAnalysis: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-500 block">Identified Transfer</span>
-                  <span className="text-base font-extrabold text-slate-900">₹8,500 recurring transfer</span>
+                  <span className="text-base font-extrabold text-slate-900">
+                    {formatCurrency(indicators.recurring_transfers.total)} recurring transfer
+                  </span>
                 </div>
                 <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-lg border border-amber-100">
-                  Detected 5 times
+                  Detected {indicators.recurring_transfers.count} time{indicators.recurring_transfers.count === 1 ? '' : 's'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#EDECE8]">
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Frequency</span>
-                  <span className="font-semibold text-slate-700">Monthly (1st)</span>
+                  <span className="text-[11px] text-slate-400 block uppercase font-bold">Status</span>
+                  <span className="font-semibold text-slate-700">
+                    {INDICATOR_STATUS_LABEL[indicators.recurring_transfers.status]}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Monthly Trend</span>
-                  <span className="font-semibold text-slate-700">Consistent outflow</span>
+                  <span className="text-[11px] text-slate-400 block uppercase font-bold">Income share</span>
+                  <span className="font-semibold text-slate-700">
+                    {formatPercent(indicators.recurring_transfers.income_share_percent)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -301,135 +463,53 @@ export const PatternAnalysis: React.FC = () => {
         whatDataDoesNotTellMe="Transaction lists cannot determine intent, verbal agreements, or why funds were withdrawn. Only you know your personal circumstances."
       />
 
-      {/* THREE DETAILED PATTERN CARDS */}
+      {/* IDENTIFIED PATTERN DETAILS — driven entirely by backend patterns */}
       <div className="space-y-6">
         <h3 className="text-xl font-bold text-[#1A1A1A]">Identified Pattern Details</h3>
 
-        {/* CARD 1 */}
-        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDECE8] pb-4">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">
-                Pattern 01
-              </span>
-              <h4 className="text-lg font-bold text-slate-900">Frequent cash withdrawals</h4>
-            </div>
-            <span className="px-3 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-100">
-              High Confidence Pattern
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Observed Pattern</h5>
-              <p className="text-sm text-slate-800 font-medium leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                ATM withdrawals occurred within 24 hours of monthly income deposits during 4 of the last 6 months.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Why it may matter</h5>
-              <p className="text-sm text-slate-600 leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                Immediate cash conversion reduces digital traceability and can limit independent access to emergency digital reserves.
-              </p>
-            </div>
-          </div>
-
-          {/* Visually emphasized "What this cannot tell us" */}
-          <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-1">
-            <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs uppercase tracking-wider">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span>What this cannot tell us</span>
-            </div>
-            <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">
-              The transaction record does not indicate whether these withdrawals were voluntary.
+        {patterns.length === 0 ? (
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs">
+            <p className="text-sm text-slate-600 leading-relaxed">
+              No specific patterns were identified from your financial data.
             </p>
           </div>
-        </div>
+        ) : (
+          patterns.map((pattern, index) => {
+            const badge = CONFIDENCE_BADGE(pattern.confidence);
+            return (
+              <div
+                key={`${pattern.type}-${index}`}
+                className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDECE8] pb-4">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-600">
+                      {`Pattern ${String(index + 1).padStart(2, '0')}`}
+                    </span>
+                    <h4 className="text-lg font-bold text-slate-900">{pattern.title}</h4>
+                  </div>
+                  <span className={badge.className}>{badge.label}</span>
+                </div>
 
-        {/* CARD 2 */}
-        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDECE8] pb-4">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">
-                Pattern 02
-              </span>
-              <h4 className="text-lg font-bold text-slate-900">Income withdrawn shortly after deposit</h4>
-            </div>
-            <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">
-              Moderate Signal
-            </span>
-          </div>
+                <div className="space-y-2">
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Observed Pattern</h5>
+                  <p className="text-sm text-slate-800 font-medium leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
+                    {pattern.description}
+                  </p>
+                </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Observed Pattern</h5>
-              <p className="text-sm text-slate-800 font-medium leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                Substantial proportion (40%+) of primary income transferred or withdrawn within 48 hours of credit.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Why it may matter</h5>
-              <p className="text-sm text-slate-600 leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                Rapid depletion of primary accounts leaves minimal independent operating buffer for personal choices.
-              </p>
-            </div>
-          </div>
-
-          {/* Visually emphasized "What this cannot tell us" */}
-          <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-1">
-            <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs uppercase tracking-wider">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span>What this cannot tell us</span>
-            </div>
-            <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">
-              The data cannot confirm whether this outflow pays for joint household expenses, savings, or external obligations.
-            </p>
-          </div>
-        </div>
-
-        {/* CARD 3 */}
-        <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDECE8] pb-4">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">
-                Pattern 03
-              </span>
-              <h4 className="text-lg font-bold text-slate-900">Recent change in spending behavior</h4>
-            </div>
-            <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">
-              Moderate Signal
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Observed Pattern</h5>
-              <p className="text-sm text-slate-800 font-medium leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                25% decrease in personal debit transactions alongside a 60% increase in third-party online transfers over 90 days.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Why it may matter</h5>
-              <p className="text-sm text-slate-600 leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                Shifting spending channels can signal reduced direct decision-making power over day-to-day household purchases.
-              </p>
-            </div>
-          </div>
-
-          {/* Visually emphasized "What this cannot tell us" */}
-          <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-1">
-            <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs uppercase tracking-wider">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span>What this cannot tell us</span>
-            </div>
-            <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">
-              A shift in spending channels can be a normal budgeting decision or mutual agreement between family members.
-            </p>
-          </div>
-        </div>
+                {/* Visually emphasized safety disclaimer — exact backend wording, never altered */}
+                <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-1">
+                  <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <span>What this cannot tell us</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">{disclaimer}</p>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* AI EXPLANATION SECTION */}
@@ -456,22 +536,13 @@ export const PatternAnalysis: React.FC = () => {
           <span>Back</span>
         </button>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <button
-            onClick={handleSkipQuestionnaire}
-            className="px-6 py-3.5 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all flex items-center justify-center space-x-1 cursor-pointer"
-          >
-            <span>Skip questionnaire</span>
-          </button>
-
-          <button
-            onClick={handleContinue}
-            className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer"
-          >
-            <span>Continue to private questions</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={handleContinue}
+          className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer"
+        >
+          <span>Continue to private questions</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

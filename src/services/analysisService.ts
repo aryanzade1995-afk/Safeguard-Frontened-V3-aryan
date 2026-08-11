@@ -1,4 +1,4 @@
-import { Analysis, AnalyzeResponse } from '../types';
+import { Analysis, AnalyzeResponse, Transaction } from '../types';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api').replace(/\/+$/, '');
 
@@ -16,6 +16,32 @@ export function buildStatementFromAnswers(answers: AnsweredQuestion[]): string {
     .filter((entry) => entry.answer.trim().length > 0)
     .map((entry) => `Question: ${entry.question}\nAnswer: ${entry.answer}`)
     .join('\n\n');
+}
+
+/**
+ * Turns the user's (real or demo) transaction list into a short first-person
+ * summary appended to the questionnaire statement, so financial-analysis
+ * data genuinely reaches the backend when it exists — and is correctly
+ * omitted entirely when the user chose to skip providing any.
+ */
+export function buildStatementFromTransactions(transactions: Transaction[]): string {
+  if (transactions.length === 0) return '';
+
+  const flagged = transactions.filter((t) => t.flagged);
+  const accountCount = new Set(transactions.map((t) => t.accountName)).size;
+  const lines = [
+    `Financial data summary: ${transactions.length} transactions reviewed across ${accountCount} account(s).`,
+  ];
+
+  if (flagged.length > 0) {
+    const examples = flagged
+      .slice(0, 5)
+      .map((t) => `"${t.description}" (₹${t.amount}, ${t.flagReason || 'flagged'})`)
+      .join('; ');
+    lines.push(`${flagged.length} transaction(s) were flagged for review, for example: ${examples}.`);
+  }
+
+  return lines.join('\n');
 }
 
 export async function analyzeStatement(statement: string): Promise<Analysis> {
