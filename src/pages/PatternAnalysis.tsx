@@ -436,7 +436,10 @@ export const PatternAnalysis: React.FC = () => {
                   </span>
                 </div>
                 <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-lg border border-amber-100">
-                  {t('patternAnalysis.detectedTimes', { count: String(indicators.recurring_transfers.count) })}
+                  {t('patternAnalysis.detectedTimes', {
+                    count: String(indicators.recurring_transfers.count),
+                    plural: indicators.recurring_transfers.count === 1 ? '' : 's',
+                  })}
                 </span>
               </div>
 
