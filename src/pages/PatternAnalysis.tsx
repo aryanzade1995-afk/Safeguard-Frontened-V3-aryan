@@ -163,6 +163,9 @@ export const PatternAnalysis: React.FC = () => {
 
   const { summary, indicators, charts, patterns, disclaimer } = health;
   const { coords: linePoints, polylinePoints, polygonPoints } = buildLineChartGeometry(charts.monthly_spending);
+  // Caps the row at roughly 8 visible month labels no matter how many
+  // months of history exist, so label text never forces the row wider than its box.
+  const labelStride = Math.max(1, Math.ceil(linePoints.length / 8));
   const withdrawalMax = Math.max(...charts.cash_withdrawals.map((p) => p.amount), 1);
 
   return (
@@ -317,7 +320,7 @@ export const PatternAnalysis: React.FC = () => {
           <p className="text-sm text-slate-500">{t('patternAnalysis.notEnoughMonthly')}</p>
         ) : (
           <div className="relative pt-6 pb-2">
-            <div className="h-44 w-full flex items-end justify-between gap-2 relative">
+            <div className="h-44 w-full flex items-end justify-between gap-2 relative overflow-hidden">
               {/* Background horizontal gridlines */}
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
                 <div className="border-b border-slate-300 w-full"></div>
@@ -345,22 +348,34 @@ export const PatternAnalysis: React.FC = () => {
               </svg>
 
               {/* Interactive Circles / Data Points */}
-              {linePoints.map((c) => (
-                <div
-                  key={c.point.month_key}
-                  onMouseEnter={() => setHoveredPoint({ month: c.point.month, amount: c.point.amount })}
-                  onMouseLeave={() => setHoveredPoint(null)}
-                  className="flex-1 flex flex-col items-center justify-end h-full z-10 group cursor-pointer"
-                >
-                  <div className="relative flex flex-col items-center mb-2">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-md mb-1 whitespace-nowrap shadow-md pointer-events-none">
-                      {formatCurrency(c.point.amount)}
+              {linePoints.map((c, i) => {
+                const isLast = i === linePoints.length - 1;
+                // With many months of history the row has no room for a
+                // label on every point — thin them to roughly 8 evenly
+                // spaced labels instead of letting the text force the row
+                // wider than its box.
+                const showLabel = isLast || i % labelStride === 0;
+                return (
+                  <div
+                    key={c.point.month_key}
+                    onMouseEnter={() => setHoveredPoint({ month: c.point.month, amount: c.point.amount })}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                    className="flex-1 min-w-0 flex flex-col items-center justify-end h-full z-10 group cursor-pointer"
+                  >
+                    <div className="relative flex flex-col items-center mb-2">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-md mb-1 whitespace-nowrap shadow-md pointer-events-none">
+                        {formatCurrency(c.point.amount)}
+                      </div>
+                      <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-600 group-hover:scale-125 group-hover:bg-indigo-600 transition-all shadow-xs shrink-0"></div>
                     </div>
-                    <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-600 group-hover:scale-125 group-hover:bg-indigo-600 transition-all shadow-xs"></div>
+                    {showLabel && (
+                      <span className="text-[12px] font-medium text-slate-500 mt-2 whitespace-nowrap">
+                        {c.point.month.split(' ')[0]}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[12px] font-medium text-slate-500 mt-2">{c.point.month.split(' ')[0]}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

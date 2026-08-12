@@ -147,6 +147,9 @@ export const FinancialWellbeingCard: React.FC<FinancialWellbeingCardProps> = ({ 
   const chronological = [...assessments].reverse();
   const trendPoints = chronological.map((a) => ({ date: a.createdAt, value: autonomyIndexOf(a) }));
   const { coords: linePoints, polylinePoints, polygonPoints } = buildScoreLineGeometry(trendPoints);
+  // Caps the row at roughly 8 visible date labels no matter how many
+  // assessments exist, so label text never forces the row wider than its box.
+  const labelStride = Math.max(1, Math.ceil(linePoints.length / 8));
 
   const scoreDelta = previousAssessment ? latestIndex - autonomyIndexOf(previousAssessment) : null;
   const DeltaIcon = scoreDelta === null || scoreDelta === 0 ? Minus : scoreDelta > 0 ? TrendingUp : TrendingDown;
@@ -287,7 +290,7 @@ export const FinancialWellbeingCard: React.FC<FinancialWellbeingCardProps> = ({ 
             </div>
 
             <div className="relative pt-6 pb-2">
-              <div className="h-44 w-full flex items-end justify-between gap-2 relative">
+              <div className="h-44 w-full flex items-end justify-between gap-2 relative overflow-hidden">
                 <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
                   <div className="border-b border-slate-300 w-full"></div>
                   <div className="border-b border-slate-300 w-full"></div>
@@ -314,12 +317,17 @@ export const FinancialWellbeingCard: React.FC<FinancialWellbeingCardProps> = ({ 
 
                 {linePoints.map((c, i) => {
                   const isLatest = i === linePoints.length - 1;
+                  // With many saved assessments the row has no room for a
+                  // label on every point — thin them to roughly 8 evenly
+                  // spaced labels (always including the latest) instead of
+                  // letting the text force the row wider than its box.
+                  const showLabel = isLatest || i % labelStride === 0;
                   return (
                     <div
                       key={c.point.date}
                       onMouseEnter={() => setHoveredPoint({ date: c.point.date, value: c.point.value })}
                       onMouseLeave={() => setHoveredPoint(null)}
-                      className="flex-1 flex flex-col items-center justify-end h-full z-10 group cursor-pointer"
+                      className="flex-1 min-w-0 flex flex-col items-center justify-end h-full z-10 group cursor-pointer"
                     >
                       <div className="relative flex flex-col items-center mb-2">
                         {isLatest && (
@@ -331,16 +339,18 @@ export const FinancialWellbeingCard: React.FC<FinancialWellbeingCardProps> = ({ 
                           {c.point.value}/100
                         </div>
                         <div
-                          className={`rounded-full border-2 transition-all shadow-xs ${
+                          className={`rounded-full border-2 transition-all shadow-xs shrink-0 ${
                             isLatest
                               ? 'w-4 h-4 bg-indigo-600 border-indigo-600'
                               : 'w-3.5 h-3.5 bg-white border-indigo-600 group-hover:scale-125 group-hover:bg-indigo-600'
                           }`}
                         ></div>
                       </div>
-                      <span className="text-[11px] font-medium text-slate-500 mt-2">
-                        {formatShortDate(c.point.date)}
-                      </span>
+                      {showLabel && (
+                        <span className="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">
+                          {formatShortDate(c.point.date)}
+                        </span>
+                      )}
                     </div>
                   );
                 })}

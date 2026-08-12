@@ -78,7 +78,7 @@ export const HeroWaveField: React.FC = () => {
   return (
     <div
       aria-hidden="true"
-      className="hero-wave-field fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none opacity-100"
+      className="hero-wave-field fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none opacity-85"
     >
       <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" className="w-full h-full">
         <defs>
