@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { KeyRound, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 
 export const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, authLoading, updatePassword } = useSafeguard();
   const { addToast } = useToast();
+  const { t } = useTranslation();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,7 +23,7 @@ export const ResetPassword: React.FC = () => {
     setErrorMessage('');
 
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setErrorMessage(t('resetPassword.passwordsNoMatch'));
       return;
     }
 
@@ -30,14 +32,14 @@ export const ResetPassword: React.FC = () => {
     setLoading(false);
 
     if (!res.success) {
-      setErrorMessage(res.error || 'Unable to reset your password. Please try again.');
+      setErrorMessage(res.error || t('resetPassword.resetFailed'));
       return;
     }
 
     setDone(true);
     addToast({
-      title: 'Password Updated',
-      description: 'Your password has been changed. You are now signed in.',
+      title: t('resetPassword.toast.updatedTitle'),
+      description: t('resetPassword.toast.updatedDesc'),
       type: 'success',
     });
   };
@@ -52,35 +54,35 @@ export const ResetPassword: React.FC = () => {
             <KeyRound className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Set a new password</h1>
-            <p className="text-xs font-medium text-slate-500">Choose a new password for your Safeguard account</p>
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{t('resetPassword.title')}</h1>
+            <p className="text-xs font-medium text-slate-500">{t('resetPassword.subtitle')}</p>
           </div>
         </div>
 
         {authLoading ? (
-          <p className="text-sm text-slate-500">Checking your reset link...</p>
+          <p className="text-sm text-slate-500">{t('resetPassword.checkingLink')}</p>
         ) : !isAuthenticated ? (
           <div className="space-y-4">
             <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs font-semibold leading-relaxed">
-              This reset link is invalid or has expired. Please request a new one from the log in screen.
+              {t('resetPassword.invalidLink')}
             </div>
             <button
               onClick={() => navigate('/')}
               className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer"
             >
-              Back to Safeguard
+              {t('resetPassword.backToSafeguard')}
             </button>
           </div>
         ) : done ? (
           <div className="space-y-4">
             <p className="text-sm text-slate-600 leading-relaxed">
-              Your password has been updated successfully.
+              {t('resetPassword.successMessage')}
             </p>
             <button
               onClick={() => navigate('/dashboard')}
               className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2"
             >
-              <span>Continue to Safeguard</span>
+              <span>{t('resetPassword.continueToSafeguard')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -97,7 +99,7 @@ export const ResetPassword: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                New Password
+                {t('resetPassword.newPassword')}
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -114,17 +116,17 @@ export const ResetPassword: React.FC = () => {
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('resetPassword.hidePassword') : t('resetPassword.showPassword')}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[12px] text-slate-400 leading-relaxed">At least 6 characters.</p>
+              <p className="text-[12px] text-slate-400 leading-relaxed">{t('resetPassword.passwordHint')}</p>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                Confirm New Password
+                {t('resetPassword.confirmNewPassword')}
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -145,7 +147,7 @@ export const ResetPassword: React.FC = () => {
               disabled={loading}
               className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-60 mt-2"
             >
-              <span>{loading ? 'Updating...' : 'Update password'}</span>
+              <span>{loading ? t('resetPassword.updating') : t('resetPassword.updatePassword')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -154,7 +156,7 @@ export const ResetPassword: React.FC = () => {
         <div className="pt-2 border-t border-stone-200 flex items-center justify-end text-xs text-slate-500">
           <div className="flex items-center space-x-1 text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Secured by Supabase Auth</span>
+            <span>{t('resetPassword.securedBy')}</span>
           </div>
         </div>
       </div>

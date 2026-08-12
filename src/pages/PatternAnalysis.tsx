@@ -10,10 +10,12 @@ import {
   DollarSign,
   AlertCircle,
   Loader2,
+  UploadCloud,
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useSafeguard } from '../context/SafeguardContext';
-import { AIInsight } from '../components/common/AIInsight';
+import { useTranslation } from '../hooks/useTranslation';
+import { AiFinancialInsight } from '../components/common/AiFinancialInsight';
 import { BackButton } from '../components/common/BackButton';
 import { getFinancialHealth } from '../services/financialHealthService';
 import { FinancialHealthData, MonthlySpendingPoint } from '../types';
@@ -42,26 +44,27 @@ function buildLineChartGeometry(points: MonthlySpendingPoint[]) {
   return { coords, polylinePoints, polygonPoints };
 }
 
-const CONFIDENCE_BADGE = (confidence: number) => {
-  if (confidence >= 0.9) {
-    return { label: 'High Confidence Pattern', className: 'px-3 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-100' };
-  }
-  if (confidence >= 0.7) {
-    return { label: 'Moderate Signal', className: 'px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100' };
-  }
-  return { label: 'Low Signal', className: 'px-3 py-1 bg-stone-100 text-slate-600 text-xs font-bold rounded-full border border-stone-200' };
-};
-
-const INDICATOR_STATUS_LABEL: Record<string, string> = {
-  observed: 'Observed',
-  none_observed: 'None observed',
-};
-
 export const PatternAnalysis: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { user } = useSafeguard();
+  const { user, questionnaireAnswers } = useSafeguard();
+  const { t } = useTranslation();
   const [hoveredPoint, setHoveredPoint] = useState<{ month: string; amount: number } | null>(null);
+
+  const CONFIDENCE_BADGE = (confidence: number) => {
+    if (confidence >= 0.9) {
+      return { label: t('patternAnalysis.confidenceHigh'), className: 'px-3 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-100' };
+    }
+    if (confidence >= 0.7) {
+      return { label: t('patternAnalysis.confidenceModerate'), className: 'px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100' };
+    }
+    return { label: t('patternAnalysis.confidenceLow'), className: 'px-3 py-1 bg-stone-100 text-slate-600 text-xs font-bold rounded-full border border-stone-200' };
+  };
+
+  const INDICATOR_STATUS_LABEL: Record<string, string> = {
+    observed: t('patternAnalysis.indicatorObserved'),
+    none_observed: t('patternAnalysis.indicatorNone'),
+  };
 
   const [health, setHealth] = useState<FinancialHealthData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -80,7 +83,7 @@ export const PatternAnalysis: React.FC = () => {
         if (isMounted) setHealth(data);
       })
       .catch((err) => {
-        if (isMounted) setError(err instanceof Error ? err.message : 'Could not load your financial analysis.');
+        if (isMounted) setError(err instanceof Error ? err.message : t('patternAnalysis.errorTitle'));
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -92,8 +95,8 @@ export const PatternAnalysis: React.FC = () => {
 
   const handleContinue = () => {
     addToast({
-      title: 'Proceeding to Private Questionnaire',
-      description: 'Your pattern analysis summary has been reviewed.',
+      title: t('patternAnalysis.toast.continueTitle'),
+      description: t('patternAnalysis.toast.continueDesc'),
       type: 'info',
     });
     navigate('/questionnaire');
@@ -109,7 +112,7 @@ export const PatternAnalysis: React.FC = () => {
         <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
-        <p className="text-sm text-slate-500 font-medium">Loading your financial analysis...</p>
+        <p className="text-sm text-slate-500 font-medium">{t('patternAnalysis.loading')}</p>
       </div>
     );
   }
@@ -121,13 +124,13 @@ export const PatternAnalysis: React.FC = () => {
         <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center mx-auto text-rose-600 shadow-sm">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">Couldn't load your financial analysis</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t('patternAnalysis.errorTitle')}</h2>
         <p className="text-sm text-slate-500">{error}</p>
         <button
           onClick={() => navigate('/financial-data')}
           className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
         >
-          Back to financial data
+          {t('patternAnalysis.backToFinancialData')}
         </button>
       </div>
     );
@@ -137,20 +140,20 @@ export const PatternAnalysis: React.FC = () => {
   if (!health) {
     return (
       <div className="max-w-4xl mx-auto space-y-10 animate-fade-in py-4 sm:py-6">
-        <BackButton fallbackPath="/financial-data" forceFallback />
+        <BackButton fallbackPath="/dashboard" forceFallback />
         <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 sm:p-10 text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
             <BarChart2 className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">No financial analysis yet</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t('patternAnalysis.emptyTitle')}</h2>
           <p className="text-sm text-[#6B7280] max-w-md mx-auto leading-relaxed">
-            Upload or select financial data first, and your pattern overview will appear here.
+            {t('patternAnalysis.emptyDesc')}
           </p>
           <button
             onClick={() => navigate('/financial-data')}
             className="inline-flex items-center space-x-1.5 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            <span>Go to financial data</span>
+            <span>{t('patternAnalysis.goToFinancialData')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -164,25 +167,34 @@ export const PatternAnalysis: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 animate-fade-in py-4 sm:py-6">
-      <BackButton fallbackPath="/financial-data" forceFallback />
+      <BackButton fallbackPath="/dashboard" forceFallback />
       {/* HEADER */}
       <div className="space-y-3 border-b border-[#EDECE8] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-semibold text-indigo-700">
             <BarChart2 className="w-3.5 h-3.5 text-indigo-600" />
-            <span>AI-Assisted Analysis</span>
+            <span>{t('patternAnalysis.badge')}</span>
           </div>
 
-          <span className="px-3 py-1 bg-stone-100 text-slate-700 border border-stone-200 rounded-full text-xs font-bold uppercase tracking-wider">
-            Informational analysis
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 bg-stone-100 text-slate-700 border border-stone-200 rounded-full text-xs font-bold uppercase tracking-wider">
+              {t('patternAnalysis.informationalAnalysis')}
+            </span>
+            <button
+              onClick={() => navigate('/financial-data')}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-stone-50 text-indigo-700 font-bold text-xs rounded-full border border-indigo-200 transition-all cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>{t('patternAnalysis.changeStatement')}</span>
+            </button>
+          </div>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
-          Financial pattern overview
+          {t('patternAnalysis.title')}
         </h1>
         <p className="text-sm sm:text-base text-[#6B7280] max-w-2xl leading-relaxed">
-          Here are patterns identified in the information you provided. All findings are purely observational to support your voluntary personal reflection.
+          {t('patternAnalysis.subtitle')}
         </p>
       </div>
 
@@ -191,18 +203,18 @@ export const PatternAnalysis: React.FC = () => {
         {/* Card 1 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-            Monthly spending
+            {t('dashboard.monthlySpending')}
           </span>
           <div className="text-2xl font-extrabold text-[#1A1A1A]">{formatCurrency(summary.monthly_spending)}</div>
           <span className="text-[11px] text-slate-400">
             {summary.spending_trend_status === 'insufficient_data'
-              ? 'Not enough history yet'
+              ? t('patternAnalysis.notEnoughHistory')
               : `${
                   summary.spending_trend_status === 'increasing'
-                    ? 'Trending up'
+                    ? t('patternAnalysis.trendUp')
                     : summary.spending_trend_status === 'decreasing'
-                      ? 'Trending down'
-                      : 'Stable trend'
+                      ? t('patternAnalysis.trendDown')
+                      : t('patternAnalysis.trendStable')
                 }${
                   summary.spending_change_percent !== null && summary.spending_change_percent !== undefined
                     ? ` (${summary.spending_change_percent > 0 ? '+' : ''}${summary.spending_change_percent}%)`
@@ -214,49 +226,49 @@ export const PatternAnalysis: React.FC = () => {
         {/* Card 2 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-            Monthly income
+            {t('patternAnalysis.monthlyIncome')}
           </span>
           <div className="text-2xl font-extrabold text-indigo-600">{formatCurrency(summary.monthly_income)}</div>
           <span className="text-[11px] text-slate-400">
-            {summary.cash_flow_status === 'positive' && 'Positive cash flow'}
-            {summary.cash_flow_status === 'break_even' && 'Break-even'}
-            {summary.cash_flow_status === 'spending_exceeds_income' && 'Spending exceeds income'}
+            {summary.cash_flow_status === 'positive' && t('patternAnalysis.positiveCashFlow')}
+            {summary.cash_flow_status === 'break_even' && t('patternAnalysis.breakEven')}
+            {summary.cash_flow_status === 'spending_exceeds_income' && t('patternAnalysis.spendingExceeds')}
           </span>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-            Average monthly spending
+            {t('patternAnalysis.averageMonthlySpending')}
           </span>
           <div className="text-2xl font-extrabold text-[#1A1A1A]">{formatCurrency(summary.average_monthly_spending)}</div>
           <span className="text-[11px] text-slate-400">
-            {formatPercent(summary.spending_utilization_percent)} income utilization
+            {formatPercent(summary.spending_utilization_percent)} {t('patternAnalysis.incomeUtilization')}
           </span>
         </div>
 
         {/* Card 4 */}
         <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 shadow-xs space-y-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-            Patterns identified
+            {t('dashboard.patternsIdentified')}
           </span>
           <div className="text-2xl font-extrabold text-amber-600">{patterns.length}</div>
-          <span className="text-[11px] text-slate-400">Signals for reflection</span>
+          <span className="text-[11px] text-slate-400">{t('patternAnalysis.signalsForReflection')}</span>
         </div>
       </div>
 
       {/* SALARY -> WITHDRAWAL -> TRANSFER TIMELINE (purely illustrative, unchanged) */}
       <div className="bg-white border border-[#EDECE8] rounded-[20px] p-5 sm:p-6 shadow-xs">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-4">
-          Typical flow observed in your data
+          {t('patternAnalysis.typicalFlow')}
         </span>
         <div className="flex items-center">
           <div className="flex flex-col items-center space-y-2 flex-1">
             <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <DollarSign className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Salary</span>
-            <span className="text-[11px] text-slate-400">Deposit received</span>
+            <span className="text-xs font-bold text-slate-800">{t('patternAnalysis.salary')}</span>
+            <span className="text-[11px] text-slate-400">{t('patternAnalysis.depositReceived')}</span>
           </div>
 
           <div className="flex-1 h-px bg-stone-200 relative -mt-8">
@@ -267,8 +279,8 @@ export const PatternAnalysis: React.FC = () => {
             <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <TrendingDown className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Withdrawal</span>
-            <span className="text-[11px] text-slate-400">Cash outflow</span>
+            <span className="text-xs font-bold text-slate-800">{t('patternAnalysis.withdrawal')}</span>
+            <span className="text-[11px] text-slate-400">{t('patternAnalysis.cashOutflow')}</span>
           </div>
 
           <div className="flex-1 h-px bg-stone-200 relative -mt-8">
@@ -279,8 +291,8 @@ export const PatternAnalysis: React.FC = () => {
             <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Repeat className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Transfer</span>
-            <span className="text-[11px] text-slate-400">Recurring outflow</span>
+            <span className="text-xs font-bold text-slate-800">{t('patternAnalysis.transfer')}</span>
+            <span className="text-[11px] text-slate-400">{t('patternAnalysis.recurringOutflow')}</span>
           </div>
         </div>
       </div>
@@ -289,9 +301,9 @@ export const PatternAnalysis: React.FC = () => {
       <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#EDECE8] pb-4">
           <div>
-            <h3 className="text-lg font-bold text-[#1A1A1A]">Monthly spending trend</h3>
+            <h3 className="text-lg font-bold text-[#1A1A1A]">{t('patternAnalysis.spendingTrendTitle')}</h3>
             <p className="text-xs text-[#6B7280] mt-0.5">
-              Historical spending trajectory based on your financial data
+              {t('patternAnalysis.spendingTrendDesc')}
             </p>
           </div>
           {hoveredPoint && (
@@ -302,7 +314,7 @@ export const PatternAnalysis: React.FC = () => {
         </div>
 
         {charts.monthly_spending.length === 0 ? (
-          <p className="text-sm text-slate-500">Not enough monthly data to chart a trend yet.</p>
+          <p className="text-sm text-slate-500">{t('patternAnalysis.notEnoughMonthly')}</p>
         ) : (
           <div className="relative pt-6 pb-2">
             <div className="h-44 w-full flex items-end justify-between gap-2 relative">
@@ -360,19 +372,19 @@ export const PatternAnalysis: React.FC = () => {
         <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-base">Cash withdrawal pattern</h3>
+              <h3 className="font-bold text-slate-900 text-base">{t('patternAnalysis.cashWithdrawalPattern')}</h3>
               <span className="text-[11px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                 {INDICATOR_STATUS_LABEL[indicators.cash_withdrawals.status]}
               </span>
             </div>
             <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-              {indicators.cash_withdrawals.count} withdrawal{indicators.cash_withdrawals.count === 1 ? '' : 's'} · {formatCurrency(indicators.cash_withdrawals.total)} total · {formatPercent(indicators.cash_withdrawals.income_share_percent)} of income
+              {t('patternAnalysis.withdrawalCount', { count: String(indicators.cash_withdrawals.count), plural: indicators.cash_withdrawals.count === 1 ? '' : 's' })} · {formatCurrency(indicators.cash_withdrawals.total)} {t('patternAnalysis.total')} · {formatPercent(indicators.cash_withdrawals.income_share_percent)} {t('patternAnalysis.ofIncome')}
             </p>
           </div>
 
           {/* Bar chart representation */}
           {charts.cash_withdrawals.length === 0 ? (
-            <p className="text-xs text-slate-400 pt-2">No cash withdrawals observed in this data.</p>
+            <p className="text-xs text-slate-400 pt-2">{t('patternAnalysis.noWithdrawals')}</p>
           ) : (
             <div className="space-y-2 pt-2">
               {charts.cash_withdrawals.map((d) => {
@@ -396,7 +408,7 @@ export const PatternAnalysis: React.FC = () => {
           )}
 
           <p className="text-[12px] text-[#9CA3AF] italic pt-2 border-t border-[#EDECE8]">
-            Note: Cash withdrawals are logged neutrally. High cash usage can occur for routine daily expenditures.
+            {t('patternAnalysis.withdrawalNote')}
           </p>
         </div>
 
@@ -408,35 +420,35 @@ export const PatternAnalysis: React.FC = () => {
                 <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <Repeat className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-slate-900 text-base">Recurring transfers</h3>
+                <h3 className="font-bold text-slate-900 text-base">{t('patternAnalysis.recurringTransfersTitle')}</h3>
               </div>
               <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
-                Fixed Outflow
+                {t('patternAnalysis.fixedOutflow')}
               </span>
             </div>
 
             <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EDECE8] space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-500 block">Identified Transfer</span>
+                  <span className="text-xs text-slate-500 block">{t('patternAnalysis.identifiedTransfer')}</span>
                   <span className="text-base font-extrabold text-slate-900">
-                    {formatCurrency(indicators.recurring_transfers.total)} recurring transfer
+                    {formatCurrency(indicators.recurring_transfers.total)} {t('patternAnalysis.recurringTransfer')}
                   </span>
                 </div>
                 <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-lg border border-amber-100">
-                  Detected {indicators.recurring_transfers.count} time{indicators.recurring_transfers.count === 1 ? '' : 's'}
+                  {t('patternAnalysis.detectedTimes', { count: String(indicators.recurring_transfers.count) })}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#EDECE8]">
                 <div>
-                  <span className="text-[11px] text-slate-400 block uppercase font-bold">Status</span>
+                  <span className="text-[11px] text-slate-400 block uppercase font-bold">{t('patternAnalysis.status')}</span>
                   <span className="font-semibold text-slate-700">
                     {INDICATOR_STATUS_LABEL[indicators.recurring_transfers.status]}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block uppercase font-bold">Income share</span>
+                  <span className="text-[11px] text-slate-400 block uppercase font-bold">{t('patternAnalysis.incomeShare')}</span>
                   <span className="font-semibold text-slate-700">
                     {formatPercent(indicators.recurring_transfers.income_share_percent)}
                   </span>
@@ -446,31 +458,23 @@ export const PatternAnalysis: React.FC = () => {
           </div>
 
           <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed font-medium">
-            This pattern may be worth reviewing with your personal context.
+            {t('patternAnalysis.transferNote')}
           </div>
         </div>
       </div>
 
-      {/* AI INSIGHT LAYER */}
-      <AIInsight
-        pattern="ATM withdrawals increased significantly over the last three months."
-        context="You also indicated that you sometimes have limited access to money."
-        interpretation="Together, these signals may be worth reviewing as part of your financial autonomy."
-        limitation="These signals cannot establish intent, coercion or financial abuse."
-        patternConfidence="High"
-        confidenceExplanation="The transaction pattern is clearly present in the supplied data."
-        whyAmISeeingThis="Safeguard correlates identified transaction anomalies (like cash withdrawal spikes) with optional answers provided during private reflection."
-        whatDataDoesNotTellMe="Transaction lists cannot determine intent, verbal agreements, or why funds were withdrawn. Only you know your personal circumstances."
-      />
+      {/* AI FINANCIAL INSIGHTS — real Gemini-generated analysis, grounded in
+          this exact `health` payload (never demo/hardcoded content) */}
+      <AiFinancialInsight health={health} questionnaireAnswers={questionnaireAnswers} />
 
       {/* IDENTIFIED PATTERN DETAILS — driven entirely by backend patterns */}
       <div className="space-y-6">
-        <h3 className="text-xl font-bold text-[#1A1A1A]">Identified Pattern Details</h3>
+        <h3 className="text-xl font-bold text-[#1A1A1A]">{t('patternAnalysis.identifiedPatternDetails')}</h3>
 
         {patterns.length === 0 ? (
           <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-xs">
             <p className="text-sm text-slate-600 leading-relaxed">
-              No specific patterns were identified from your financial data.
+              {t('patternAnalysis.noPatterns')}
             </p>
           </div>
         ) : (
@@ -492,7 +496,7 @@ export const PatternAnalysis: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">Observed Pattern</h5>
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('patternAnalysis.observedPattern')}</h5>
                   <p className="text-sm text-slate-800 font-medium leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
                     {pattern.description}
                   </p>
@@ -502,7 +506,7 @@ export const PatternAnalysis: React.FC = () => {
                 <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-1">
                   <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-xs uppercase tracking-wider">
                     <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <span>What this cannot tell us</span>
+                    <span>{t('patternAnalysis.whatThisCannotTellUs')}</span>
                   </div>
                   <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">{disclaimer}</p>
                 </div>
@@ -518,29 +522,29 @@ export const PatternAnalysis: React.FC = () => {
           <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
             <Info className="w-4 h-4" />
           </div>
-          <h4 className="text-base font-bold text-[#1A1A1A]">How Safeguard interprets patterns</h4>
+          <h4 className="text-base font-bold text-[#1A1A1A]">{t('patternAnalysis.howInterprets')}</h4>
         </div>
 
         <p className="text-sm text-[#6B7280] leading-relaxed pl-9">
-          Patterns are signals, not conclusions. Financial transactions alone cannot tell us why a transaction happened or whether someone was pressured.
+          {t('patternAnalysis.interpretsDesc')}
         </p>
       </div>
 
       {/* BOTTOM NAVIGATION ACTIONS */}
       <div className="pt-6 border-t border-[#EDECE8] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <button
-          onClick={() => navigate('/financial-data')}
+          onClick={() => navigate('/dashboard')}
           className="px-5 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-[#EDECE8] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back</span>
+          <span>{t('patternAnalysis.back')}</span>
         </button>
 
         <button
           onClick={handleContinue}
           className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer"
         >
-          <span>Continue to private questions</span>
+          <span>{t('patternAnalysis.continueToQuestions')}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

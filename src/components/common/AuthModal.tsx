@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useSafeguard } from '../../context/SafeguardContext';
 import { useToast } from '../../context/ToastContext';
+import { useTranslation } from '../../hooks/useTranslation';
 import { GoogleIcon } from './GoogleIcon';
 
 type ModalMode = 'auth' | 'forgotPassword' | 'forgotPasswordSent' | 'confirmEmailSent';
@@ -32,6 +33,7 @@ export const AuthModal: React.FC = () => {
   } = useSafeguard();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(authModalTab || 'login');
   const [mode, setMode] = useState<ModalMode>('auth');
@@ -66,7 +68,7 @@ export const AuthModal: React.FC = () => {
     setLoading(false);
 
     if (!res.success) {
-      setErrorMessage(res.error || 'Something went wrong. Please try again.');
+      setErrorMessage(res.error || t('auth.errors.generic'));
       return;
     }
 
@@ -76,8 +78,8 @@ export const AuthModal: React.FC = () => {
     }
 
     addToast({
-      title: activeTab === 'signup' ? 'Account Created' : 'Welcome Back',
-      description: 'You are now signed in.',
+      title: activeTab === 'signup' ? t('auth.toast.accountCreated') : t('auth.toast.welcomeBack'),
+      description: t('auth.toast.signedIn'),
       type: 'success',
     });
     closeAuthModal();
@@ -90,7 +92,7 @@ export const AuthModal: React.FC = () => {
     const res = await signInWithGoogle();
     if (!res.success) {
       setGoogleLoading(false);
-      setErrorMessage(res.error || 'Unable to start Google sign-in. Please try again.');
+      setErrorMessage(res.error || t('auth.errors.google'));
     }
     // On success the browser is navigating away to Google — leave the
     // loading state on so the button doesn't flicker before the redirect.
@@ -104,7 +106,7 @@ export const AuthModal: React.FC = () => {
     setLoading(false);
 
     if (!res.success) {
-      setErrorMessage(res.error || 'Unable to send a reset link. Please try again.');
+      setErrorMessage(res.error || t('auth.errors.resetLink'));
       return;
     }
     setMode('forgotPasswordSent');
@@ -127,25 +129,25 @@ export const AuthModal: React.FC = () => {
 
   const headerTitle =
     mode === 'forgotPassword'
-      ? 'Reset your password'
+      ? t('auth.title.forgotPassword')
       : mode === 'forgotPasswordSent'
-      ? 'Check your email'
+      ? t('auth.title.forgotPasswordSent')
       : mode === 'confirmEmailSent'
-      ? 'Confirm your email'
+      ? t('auth.title.confirmEmailSent')
       : activeTab === 'login'
-      ? 'Log in to Safeguard'
-      : 'Create an Account';
+      ? t('auth.title.login')
+      : t('auth.title.signup');
 
   const headerSubtitle =
     mode === 'forgotPassword'
-      ? "We'll email you a link to reset your password."
+      ? t('auth.subtitle.forgotPassword')
       : mode === 'forgotPasswordSent'
-      ? `A reset link was sent to ${email.trim()} if an account exists.`
+      ? t('auth.subtitle.forgotPasswordSent', { email: email.trim() })
       : mode === 'confirmEmailSent'
-      ? `Click the link we sent to ${email.trim()} to activate your account.`
+      ? t('auth.subtitle.confirmEmailSent', { email: email.trim() })
       : activeTab === 'login'
-      ? 'Access your private account & financial dashboard'
-      : 'Start your confidential financial autonomy journey';
+      ? t('auth.subtitle.login')
+      : t('auth.subtitle.signup');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
@@ -174,7 +176,7 @@ export const AuthModal: React.FC = () => {
           <button
             onClick={closeAuthModal}
             className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-stone-100 transition-colors"
-            aria-label="Close authentication modal"
+            aria-label={t('auth.closeAria')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -194,7 +196,7 @@ export const AuthModal: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Log in
+              {t('auth.tabs.login')}
             </button>
             <button
               type="button"
@@ -208,7 +210,7 @@ export const AuthModal: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Sign up
+              {t('auth.tabs.signup')}
             </button>
           </div>
         )}
@@ -226,7 +228,7 @@ export const AuthModal: React.FC = () => {
         {mode === 'confirmEmailSent' || mode === 'forgotPasswordSent' ? (
           <div className="space-y-4">
             <p className="text-xs text-slate-600 leading-relaxed">
-              Didn't get the email? Check your spam folder, or try again in a few minutes.
+              {t('auth.didntGetEmail')}
             </p>
             <button
               type="button"
@@ -234,14 +236,14 @@ export const AuthModal: React.FC = () => {
               className="w-full py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to log in</span>
+              <span>{t('auth.buttons.backToLogin')}</span>
             </button>
           </div>
         ) : mode === 'forgotPassword' ? (
           <form onSubmit={handleSendResetLink} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                Email Address
+                {t('auth.fields.email')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -261,7 +263,7 @@ export const AuthModal: React.FC = () => {
               disabled={loading}
               className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-60 mt-2"
             >
-              <span>{loading ? 'Sending link...' : 'Send reset link'}</span>
+              <span>{loading ? t('auth.buttons.sendingLink') : t('auth.buttons.sendResetLink')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -271,7 +273,7 @@ export const AuthModal: React.FC = () => {
               className="w-full text-xs text-slate-500 hover:text-slate-700 font-bold flex items-center justify-center space-x-1 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to log in</span>
+              <span>{t('auth.buttons.backToLogin')}</span>
             </button>
           </form>
         ) : (
@@ -280,7 +282,7 @@ export const AuthModal: React.FC = () => {
               {activeTab === 'signup' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                    Full Name (Optional)
+                    {t('auth.fields.fullName')}
                   </label>
                   <div className="relative">
                     <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -297,7 +299,7 @@ export const AuthModal: React.FC = () => {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  Email Address
+                  {t('auth.fields.email')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -315,7 +317,7 @@ export const AuthModal: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                    Password
+                    {t('auth.fields.password')}
                   </label>
                   {activeTab === 'login' && (
                     <button
@@ -326,7 +328,7 @@ export const AuthModal: React.FC = () => {
                       }}
                       className="text-[12px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
                     >
-                      Forgot password?
+                      {t('auth.forgotPasswordLink')}
                     </button>
                   )}
                 </div>
@@ -345,13 +347,13 @@ export const AuthModal: React.FC = () => {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {activeTab === 'signup' && (
-                  <p className="text-[12px] text-slate-400 leading-relaxed">At least 6 characters.</p>
+                  <p className="text-[12px] text-slate-400 leading-relaxed">{t('auth.passwordHint')}</p>
                 )}
               </div>
 
@@ -362,10 +364,10 @@ export const AuthModal: React.FC = () => {
               >
                 <span>
                   {loading
-                    ? 'Please wait...'
+                    ? t('auth.buttons.pleaseWait')
                     : activeTab === 'login'
-                    ? 'Log in to Account'
-                    : 'Create Confidential Account'}
+                    ? t('auth.buttons.login')
+                    : t('auth.buttons.signup')}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -373,7 +375,7 @@ export const AuthModal: React.FC = () => {
 
             <div className="flex items-center space-x-3">
               <div className="h-px flex-1 bg-stone-200" />
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">or</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('auth.or')}</span>
               <div className="h-px flex-1 bg-stone-200" />
             </div>
 
@@ -384,7 +386,7 @@ export const AuthModal: React.FC = () => {
               className="w-full py-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-sm rounded-xl border border-stone-200 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2.5 disabled:opacity-60 shadow-xs"
             >
               <GoogleIcon className="w-4 h-4" />
-              <span>{googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}</span>
+              <span>{googleLoading ? t('auth.buttons.redirectingGoogle') : t('auth.buttons.continueWithGoogle')}</span>
             </button>
           </>
         )}
@@ -393,7 +395,7 @@ export const AuthModal: React.FC = () => {
         <div className="pt-2 border-t border-stone-200 flex items-center justify-end text-xs text-slate-500">
           <div className="flex items-center space-x-1 text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Secured by Supabase Auth</span>
+            <span>{t('auth.securedBy')}</span>
           </div>
         </div>
       </div>

@@ -231,6 +231,44 @@ export interface FinancialHealthResponse {
   data: FinancialHealthData | null;
 }
 
+// POST /api/ai-insight contract (backend/src/index.ts + geminiClient.ts).
+// Every field is optional so the same endpoint serves two callers with
+// different real data: the Financial Pattern Overview page sends the
+// financial* fields (reusing the FastAPI backend's own shapes above),
+// the Financial Autonomy Report page sends signals/risk (reusing the
+// assessment analysis shapes below) — nothing here is fabricated on the
+// frontend, each caller forwards only the real data it already has.
+export interface AiInsightRequest {
+  financialSummary?: FinancialHealthSummary;
+  financialIndicators?: FinancialHealthIndicators;
+  financialPatterns?: FinancialPatternItem[];
+  financialTrend?: MonthlySummaryPoint[];
+  questionnaireAnswers?: Record<string, string>;
+  signals?: AnalysisSignals;
+  risk?: AnalysisRisk;
+}
+
+export interface AiInsightResult {
+  keyFinding: string;
+  whatDataSuggests: string;
+  patternExplanation: string;
+  nextSteps: string[];
+  areasToReview: string[];
+}
+
+export interface AiInsightSuccessResponse {
+  success: true;
+  insufficientData: boolean;
+  insight: AiInsightResult | null;
+}
+
+export interface AiInsightErrorResponse {
+  success: false;
+  error: string;
+}
+
+export type AiInsightResponse = AiInsightSuccessResponse | AiInsightErrorResponse;
+
 // POST /api/financial/analyze success response (multipart upload).
 // financial_analysis_id/created_at come straight from the saved Supabase
 // row — never generated or guessed on the frontend.
@@ -239,4 +277,67 @@ export interface FinancialAnalyzeSuccessResponse {
   filename: string;
   financial_analysis_id: string;
   created_at: string;
+}
+
+// POST /api/chat contract (FastAPI backend, see
+// ../qwen4b/backend/main.py + services/chat_service.py). Field names and
+// allowed values mirror normalize_chat_response() exactly.
+export type ChatIntent =
+  | 'GENERAL'
+  | 'FINANCIAL_PATTERN'
+  | 'SPENDING_PATTERN'
+  | 'INFORMATION_REQUEST'
+  | 'EDUCATION'
+  | 'ASSESSMENT'
+  | 'PRIVACY'
+  | 'RESOURCES';
+
+export type ChatAction = 'NONE' | 'NAVIGATE' | 'SHOW_PATTERN' | 'SHOW_RESULT';
+
+export type ChatRoute =
+  | '/dashboard'
+  | '/pattern-analysis'
+  | '/financial-health'
+  | '/results'
+  | '/resources'
+  | '/settings/privacy';
+
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatRequestPayload {
+  message: string;
+  language?: string;
+  user_id?: string | null;
+  use_user_context?: boolean;
+  history?: ChatHistoryItem[];
+}
+
+export interface ChatResponsePayload {
+  message: string;
+  language: string;
+  intent: ChatIntent;
+  action: ChatAction;
+  route: ChatRoute | null;
+  insight: unknown;
+  suggestion: unknown;
+  confidence: number;
+}
+
+// GET /api/voice/config contract (same FastAPI backend, see
+// services/voice_service.py: SUPPORTED_LANGUAGES = {en, hi, mr}). This is
+// the single source of truth for which app language codes exist — the
+// website language switcher and the chatbot's `language` field both read
+// from it, so neither can invent a language the backend doesn't support.
+export type AppLanguageCode = 'en' | 'hi' | 'mr';
+
+export interface VoiceConfigResponse {
+  enabled: boolean;
+  language: string;
+  speech_language: string;
+  input: string;
+  output: string;
+  supported_languages: Record<string, string>;
 }

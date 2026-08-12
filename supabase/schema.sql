@@ -35,20 +35,32 @@ create policy "Users can insert own profile"
 -- both email/password sign-up and Google OAuth sign-in. Google populates
 -- raw_user_meta_data with `full_name`/`name` and `avatar_url`/`picture`;
 -- our own email/password sign-up passes `full_name` explicitly at sign-up.
+--
+-- The insert is wrapped in its own exception handler: this trigger runs
+-- inside the SAME transaction as the `auth.users` insert, so any error it
+-- raises aborts account creation entirely — surfaced to the client as the
+-- generic "Database error saving new user" with no further detail. Catching
+-- and logging instead of propagating means a profile-row hiccup can never
+-- block someone from actually getting an account (new email/password sign-up
+-- AND first-time Google sign-in both go through this exact path).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, avatar_url)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
-    coalesce(new.raw_user_meta_data ->> 'avatar_url', new.raw_user_meta_data ->> 'picture')
-  )
-  on conflict (id) do nothing;
+  begin
+    insert into public.profiles (id, email, full_name, avatar_url)
+    values (
+      new.id,
+      new.email,
+      coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
+      coalesce(new.raw_user_meta_data ->> 'avatar_url', new.raw_user_meta_data ->> 'picture')
+    )
+    on conflict (id) do nothing;
+  exception when others then
+    raise warning 'handle_new_user: failed to create profile for %: %', new.id, sqlerrm;
+  end;
   return new;
 end;
 $$;

@@ -14,82 +14,40 @@ import {
 } from 'lucide-react';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { BackButton } from '../components/common/BackButton';
 import { buildStatementFromAnswers, buildStatementFromTransactions } from '../services/analysisService';
 
-interface Question {
-  id: string;
-  question: string;
-  options: string[];
-}
+const QUESTION_IDS = [
+  'q_income_control',
+  'q_money_access',
+  'q_pressured_money',
+  'q_independent_decisions',
+  'q_account_restriction',
+  'q_decision_safety',
+] as const;
 
-const QUESTIONS: Question[] = [
-  {
-    id: 'q_income_control',
-    question: 'Do you have control over your own income?',
-    options: [
-      'Yes, completely',
-      'Mostly',
-      'Sometimes',
-      'Rarely',
-    ],
-  },
-  {
-    id: 'q_money_access',
-    question: 'Can you access money when you need it?',
-    options: [
-      'Always',
-      'Usually',
-      'Sometimes',
-      'Rarely',
-    ],
-  },
-  {
-    id: 'q_pressured_money',
-    question: 'Have you ever felt pressured to give someone money?',
-    options: [
-      'Never',
-      'Rarely',
-      'Sometimes',
-      'Often',
-    ],
-  },
-  {
-    id: 'q_independent_decisions',
-    question: 'Are you able to make financial decisions independently?',
-    options: [
-      'Yes',
-      'Mostly',
-      'Sometimes',
-      'Rarely',
-    ],
-  },
-  {
-    id: 'q_account_restriction',
-    question: 'Has someone restricted your access to your own financial accounts?',
-    options: [
-      'No',
-      "I'm not sure",
-      'Yes',
-    ],
-  },
-  {
-    id: 'q_decision_safety',
-    question: 'Do you feel safe making financial decisions?',
-    options: [
-      'Yes',
-      'Mostly',
-      'Sometimes',
-      'Rarely',
-    ],
-  },
-];
+const OPTION_COUNTS: Record<(typeof QUESTION_IDS)[number], number> = {
+  q_income_control: 4,
+  q_money_access: 4,
+  q_pressured_money: 4,
+  q_independent_decisions: 4,
+  q_account_restriction: 3,
+  q_decision_safety: 4,
+};
 
 export const Questionnaire: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { t } = useTranslation();
   const { questionnaireAnswers, setQuestionnaireAnswer, isDemoMode, resetDemo, user, transactions, openAuthModal } =
     useSafeguard();
+
+  const QUESTIONS = QUESTION_IDS.map((id) => ({
+    id,
+    question: t(`questionnaire.questions.${id}.question`),
+    options: Array.from({ length: OPTION_COUNTS[id] }, (_, i) => t(`questionnaire.questions.${id}.options.${i}`)),
+  }));
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -108,8 +66,8 @@ export const Questionnaire: React.FC = () => {
     } else {
       setIsCompleted(true);
       addToast({
-        title: 'Reflection Completed',
-        description: 'Your answers have been stored locally in browser memory.',
+        title: t('questionnaire.toast.completedTitle'),
+        description: t('questionnaire.toast.completedDesc'),
         type: 'success',
       });
     }
@@ -143,8 +101,8 @@ export const Questionnaire: React.FC = () => {
 
     if (!fullStatement.trim()) {
       addToast({
-        title: 'No responses to analyze',
-        description: 'Please answer at least one question before viewing your assessment.',
+        title: t('questionnaire.toast.noResponsesTitle'),
+        description: t('questionnaire.toast.noResponsesDesc'),
         type: 'warning',
       });
       return;
@@ -152,8 +110,8 @@ export const Questionnaire: React.FC = () => {
 
     if (!user) {
       addToast({
-        title: 'Sign In Required',
-        description: 'Your answers are saved — sign in to generate and save your assessment.',
+        title: t('questionnaire.toast.signInTitle'),
+        description: t('questionnaire.toast.signInDesc'),
         type: 'warning',
       });
       openAuthModal('login', '/questionnaire');
@@ -177,21 +135,21 @@ export const Questionnaire: React.FC = () => {
       <div className="space-y-3 text-center sm:text-left">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-extrabold uppercase tracking-widest text-indigo-600">
-            Step {currentIndex + 1} of {totalQuestions}
+            {t('questionnaire.stepOf', { current: String(currentIndex + 1), total: String(totalQuestions) })}
           </span>
 
           <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-bold text-emerald-800">
             <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Private response</span>
+            <span>{t('questionnaire.privateResponse')}</span>
           </div>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Private reflection
+          {t('questionnaire.title')}
         </h1>
 
         <p className="text-sm sm:text-base text-slate-500 leading-relaxed">
-          Financial transactions cannot explain everything. Your answers help provide context that financial data cannot.
+          {t('questionnaire.subtitle')}
         </p>
       </div>
 
@@ -199,17 +157,17 @@ export const Questionnaire: React.FC = () => {
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-[20px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900">
           <div className="flex items-center space-x-2.5">
             <span className="px-3 py-1 bg-amber-500/20 rounded-full font-extrabold text-xs uppercase tracking-wider shrink-0">
-              Demo Mode — Fictional Responses
+              {t('questionnaire.demoBadge')}
             </span>
             <span className="text-xs font-medium text-amber-900/90">
-              Fictional questionnaire answers loaded (moderate informational signal).
+              {t('questionnaire.demoDesc')}
             </span>
           </div>
           <button
             onClick={handleViewAssessment}
             className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
           >
-            <span>Skip to Results</span>
+            <span>{t('questionnaire.skipToResults')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -221,7 +179,7 @@ export const Questionnaire: React.FC = () => {
           {/* Question Progress Indicator */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-              <span>Question {currentIndex + 1} of {totalQuestions}</span>
+              <span>{t('questionnaire.questionOf', { current: String(currentIndex + 1), total: String(totalQuestions) })}</span>
               <span className="text-indigo-600 font-extrabold">
                 {Math.round(((currentIndex + 1) / totalQuestions) * 100)}%
               </span>
@@ -279,14 +237,14 @@ export const Questionnaire: React.FC = () => {
               className="px-5 py-3 bg-white hover:bg-stone-50 text-slate-700 font-bold text-xs rounded-xl border border-stone-200 transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <span>{t('questionnaire.back')}</span>
             </button>
 
             <button
               onClick={handleNext}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer"
             >
-              <span>{currentIndex === totalQuestions - 1 ? 'Finish' : 'Next'}</span>
+              <span>{currentIndex === totalQuestions - 1 ? t('questionnaire.finish') : t('questionnaire.next')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -300,10 +258,10 @@ export const Questionnaire: React.FC = () => {
 
           <div className="space-y-2 max-w-md mx-auto">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Thank you for sharing.
+              {t('questionnaire.completeTitle')}
             </h2>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Your responses will be combined with the optional financial patterns to provide an informational assessment.
+              {t('questionnaire.completeDesc')}
             </p>
           </div>
 
@@ -312,7 +270,7 @@ export const Questionnaire: React.FC = () => {
               onClick={handleViewAssessment}
               className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <span>View Financial Autonomy Report</span>
+              <span>{t('questionnaire.viewReport')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -321,7 +279,7 @@ export const Questionnaire: React.FC = () => {
               className="text-xs text-slate-500 hover:text-indigo-600 font-medium underline flex items-center space-x-1 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Review my answers</span>
+              <span>{t('questionnaire.reviewAnswers')}</span>
             </button>
           </div>
         </div>
@@ -331,7 +289,7 @@ export const Questionnaire: React.FC = () => {
       <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-xs text-slate-600 leading-relaxed flex items-start space-x-2.5">
         <Shield className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
         <span>
-          Do not include names, account numbers, passwords, or other identifying information in optional text fields.
+          {t('questionnaire.privacyNote')}
         </span>
       </div>
     </div>

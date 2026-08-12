@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BookOpen,
   Lock,
@@ -18,7 +19,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import { BackButton } from '../components/common/BackButton';
+import { useTranslation } from '../hooks/useTranslation';
 
 type ResourceGroup =
   | 'Financial autonomy'
@@ -157,6 +158,7 @@ const SUPPORT_CATEGORIES: SupportCategory[] = [
 
 export const Resources: React.FC = () => {
   const { addToast } = useToast();
+  const { t } = useTranslation();
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
@@ -167,15 +169,15 @@ export const Resources: React.FC = () => {
     if (savedIds.includes(id)) {
       setSavedIds(savedIds.filter((item) => item !== id));
       addToast({
-        title: 'Removed from Saved Resources',
-        description: `"${title}" has been removed.`,
+        title: t('resources.toast.removedTitle'),
+        description: t('resources.toast.removedDesc', { title }),
         type: 'info',
       });
     } else {
       setSavedIds([...savedIds, id]);
       addToast({
-        title: 'Saved to Resources',
-        description: `"${title}" added to your saved list.`,
+        title: t('resources.toast.savedTitle'),
+        description: t('resources.toast.savedDesc', { title }),
         type: 'success',
       });
     }
@@ -194,13 +196,12 @@ export const Resources: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 animate-fade-in py-4 sm:py-6">
-      <BackButton fallbackPath="/" />
       {/* HEADER */}
       <div className="space-y-4 border-b border-[#EDECE8] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-bold text-indigo-700">
             <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Educational Knowledge Hub</span>
+            <span>{t('resources.badge')}</span>
           </div>
 
           {/* Filter Tabs */}
@@ -213,7 +214,7 @@ export const Resources: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Resources
+              {t('resources.tabs.all')}
             </button>
             <button
               onClick={() => setActiveTab('saved')}
@@ -224,16 +225,16 @@ export const Resources: React.FC = () => {
               }`}
             >
               <Heart className={`w-3.5 h-3.5 ${savedIds.length > 0 ? 'fill-indigo-600 text-indigo-600' : ''}`} />
-              <span>Saved ({savedIds.length})</span>
+              <span>{t('resources.tabs.saved')} ({savedIds.length})</span>
             </button>
           </div>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
-          Resources & support
+          {t('resources.title')}
         </h1>
         <p className="text-sm sm:text-base text-[#6B7280] max-w-2xl leading-relaxed">
-          Learn more about financial autonomy, digital safety and financial wellbeing.
+          {t('resources.subtitle')}
         </p>
       </div>
 
@@ -246,16 +247,16 @@ export const Resources: React.FC = () => {
                 <Heart className="w-6 h-6 text-indigo-400" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-slate-900">No resources saved</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t('resources.empty.title')}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
-                  Bookmark educational guides or support contacts to access them quickly here anytime.
+                  {t('resources.empty.desc')}
                 </p>
               </div>
               <button
                 onClick={() => setActiveTab('all')}
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer inline-flex items-center space-x-1.5"
               >
-                <span>Browse all resources</span>
+                <span>{t('resources.empty.browse')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -263,7 +264,7 @@ export const Resources: React.FC = () => {
             <div className="space-y-8">
               {savedArticles.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900">Saved Articles</h3>
+                  <h3 className="text-lg font-bold text-slate-900">{t('resources.savedArticles')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {savedArticles.map((article) => (
                       <div
@@ -274,7 +275,7 @@ export const Resources: React.FC = () => {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full">
-                              {article.category}
+                              {t(`resources.articles.${article.id}.category`)}
                             </span>
                             <button
                               type="button"
@@ -284,8 +285,8 @@ export const Resources: React.FC = () => {
                               <Heart className="w-4 h-4 fill-indigo-600 text-indigo-600" />
                             </button>
                           </div>
-                          <h4 className="font-bold text-slate-900 text-base">{article.title}</h4>
-                          <p className="text-xs text-[#6B7280] leading-relaxed">{article.summary}</p>
+                          <h4 className="font-bold text-slate-900 text-base">{t(`resources.articles.${article.id}.title`)}</h4>
+                          <p className="text-xs text-[#6B7280] leading-relaxed">{t(`resources.articles.${article.id}.summary`)}</p>
                         </div>
                       </div>
                     ))}
@@ -295,7 +296,7 @@ export const Resources: React.FC = () => {
 
               {savedCategories.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900">Saved Support Contacts</h3>
+                  <h3 className="text-lg font-bold text-slate-900">{t('resources.savedContacts')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {savedCategories.map((cat) => (
                       <div
@@ -305,7 +306,7 @@ export const Resources: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="p-2.5 bg-indigo-50 rounded-xl">{cat.icon}</div>
-                            <h4 className="font-bold text-slate-900 text-base">{cat.title}</h4>
+                            <h4 className="font-bold text-slate-900 text-base">{t(`resources.categories.${cat.id}.title`)}</h4>
                           </div>
                           <button
                             type="button"
@@ -315,12 +316,12 @@ export const Resources: React.FC = () => {
                             <Heart className="w-4 h-4 fill-indigo-600 text-indigo-600" />
                           </button>
                         </div>
-                        <p className="text-xs text-[#6B7280] leading-relaxed">{cat.description}</p>
+                        <p className="text-xs text-[#6B7280] leading-relaxed">{t(`resources.categories.${cat.id}.description`)}</p>
                         <button
                           onClick={() => handleOpenSupport(cat)}
                           className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-all"
                         >
-                          View Details
+                          {t('resources.viewDetails')}
                         </button>
                       </div>
                     ))}
@@ -337,7 +338,7 @@ export const Resources: React.FC = () => {
       {/* FEATURED SECTION (Three Large Cards) */}
       <div className="space-y-4">
         <h2 className="text-xl font-extrabold text-[#1A1A1A] tracking-tight">
-          Core Pillars of Financial Autonomy
+          {t('resources.pillars.title')}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -348,14 +349,14 @@ export const Resources: React.FC = () => {
                 <Compass className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-bold text-[#1A1A1A]">
-                Understanding financial autonomy
+                {t('resources.pillars.p1.title')}
               </h3>
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                Financial autonomy is the ability to make independent financial decisions, access personal money, and maintain complete visibility over your earnings and accounts.
+                {t('resources.pillars.p1.desc')}
               </p>
             </div>
             <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
-              Why it matters: Independent access ensures stability during life transitions and unexpected situations.
+              {t('resources.pillars.p1.note')}
             </p>
           </div>
 
@@ -366,14 +367,14 @@ export const Resources: React.FC = () => {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-bold text-[#1A1A1A]">
-                Recognizing financial pressure
+                {t('resources.pillars.p2.title')}
               </h3>
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                Financial pressure can occur through restrictive budgeting, enforced cash withdrawals, restricted credit access, or required permission for daily spending.
+                {t('resources.pillars.p2.desc')}
               </p>
             </div>
             <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
-              Note: Every situation is unique. Experiencing shared budgeting differs from forced financial isolation.
+              {t('resources.pillars.p2.note')}
             </p>
           </div>
 
@@ -384,14 +385,14 @@ export const Resources: React.FC = () => {
                 <Lock className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-bold text-[#1A1A1A]">
-                Protecting financial privacy
+                {t('resources.pillars.p3.title')}
               </h3>
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                Protecting privacy involves using unshared email accounts for e-statements, enabling strong device locks, and maintaining secure physical copies of personal identification.
+                {t('resources.pillars.p3.desc')}
               </p>
             </div>
             <p className="text-[12px] text-slate-500 pt-3 border-t border-[#EDECE8] italic">
-              Best practice: Utilize multi-factor authentication on unshared secondary mobile devices or security keys.
+              {t('resources.pillars.p3.note')}
             </p>
           </div>
         </div>
@@ -401,10 +402,10 @@ export const Resources: React.FC = () => {
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-extrabold text-[#1A1A1A] tracking-tight">
-            Support
+            {t('resources.support.title')}
           </h2>
           <p className="text-xs text-[#6B7280] mt-0.5">
-            Confidential organizations offering specialized information, advocacy, and guidance.
+            {t('resources.support.subtitle')}
           </p>
         </div>
 
@@ -417,20 +418,20 @@ export const Resources: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 bg-indigo-50 rounded-xl">{cat.icon}</div>
-                  <h3 className="font-bold text-slate-900 text-base">{cat.title}</h3>
+                  <h3 className="font-bold text-slate-900 text-base">{t(`resources.categories.${cat.id}.title`)}</h3>
                 </div>
                 <p className="text-xs text-[#6B7280] leading-relaxed pt-1">
-                  {cat.description}
+                  {t(`resources.categories.${cat.id}.description`)}
                 </p>
               </div>
 
               <div className="pt-3 border-t border-[#EDECE8] flex items-center justify-between">
-                <span className="text-[11px] text-slate-400 font-medium">Free & Confidential</span>
+                <span className="text-[11px] text-slate-400 font-medium">{t('resources.support.freeConfidential')}</span>
                 <button
                   onClick={() => handleOpenSupport(cat)}
                   className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-all flex items-center space-x-1 cursor-pointer"
                 >
-                  <span>Learn more</span>
+                  <span>{t('resources.support.learnMore')}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -443,10 +444,10 @@ export const Resources: React.FC = () => {
       <div className="space-y-10">
         <div>
           <h2 className="text-xl font-extrabold text-[#1A1A1A] tracking-tight">
-            Educational Guides & Articles
+            {t('resources.articlesSection.title')}
           </h2>
           <p className="text-xs text-[#6B7280] mt-0.5">
-            In-depth reading to help you understand account rights, transaction analysis, and financial planning.
+            {t('resources.articlesSection.subtitle')}
           </p>
         </div>
 
@@ -456,7 +457,7 @@ export const Resources: React.FC = () => {
           return (
             <div key={group} className="space-y-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-indigo-700">
-                {group}
+                {t(`resources.groups.${group}`)}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {groupArticles.map((article) => (
@@ -468,22 +469,22 @@ export const Resources: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="px-2.5 py-0.5 bg-stone-100 text-slate-700 text-[11px] font-bold rounded-full border border-stone-200">
-                          {article.category}
+                          {t(`resources.articles.${article.id}.category`)}
                         </span>
-                        <span className="text-[11px] text-slate-400">{article.readTime}</span>
+                        <span className="text-[11px] text-slate-400">{t(`resources.articles.${article.id}.readTime`)}</span>
                       </div>
 
                       <h4 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors leading-snug">
-                        {article.title}
+                        {t(`resources.articles.${article.id}.title`)}
                       </h4>
 
                       <p className="text-xs text-[#6B7280] leading-relaxed line-clamp-3">
-                        {article.summary}
+                        {t(`resources.articles.${article.id}.summary`)}
                       </p>
                     </div>
 
                     <div className="pt-3 border-t border-[#EDECE8] flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-                      <span>Read guide</span>
+                      <span>{t('resources.readGuide')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </div>
                   </div>
@@ -500,27 +501,30 @@ export const Resources: React.FC = () => {
       <div className="p-6 bg-[#FAF9F6] border border-[#EDECE8] rounded-[24px] space-y-2">
         <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm">
           <Info className="w-4 h-4 text-indigo-600" />
-          <span>Educational Scope Disclaimer</span>
+          <span>{t('resources.disclaimer.title')}</span>
         </div>
         <p className="text-xs text-[#6B7280] leading-relaxed">
-          Safeguard provides educational information and does not replace professional, legal, financial or emergency services. If you require legal representation, financial counseling, or immediate safety assistance, please reach out to qualified licensed providers or local emergency services.
+          {t('resources.disclaimer.text')}
         </p>
       </div>
 
-      {/* MODAL: ARTICLE READER */}
-      {selectedArticle && (
+      {/* MODAL: ARTICLE READER — portaled to <body> so its `fixed` overlay is
+          never re-parented under an ancestor with an active `transform`
+          (e.g. this page's own `animate-fade-in`), which would otherwise
+          shrink it down to that ancestor's box instead of the viewport. */}
+      {selectedArticle && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white border border-[#EDECE8] rounded-[28px] max-w-2xl w-full p-6 sm:p-8 shadow-xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between gap-4 border-b border-[#EDECE8] pb-4">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full">
-                    {selectedArticle.category}
+                    {t(`resources.articles.${selectedArticle.id}.category`)}
                   </span>
-                  <span className="text-xs text-slate-400">• {selectedArticle.readTime}</span>
+                  <span className="text-xs text-slate-400">• {t(`resources.articles.${selectedArticle.id}.readTime`)}</span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
-                  {selectedArticle.title}
+                  {t(`resources.articles.${selectedArticle.id}.title`)}
                 </h3>
               </div>
 
@@ -533,36 +537,37 @@ export const Resources: React.FC = () => {
             </div>
 
             <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {selectedArticle.content.map((paragraph, idx) => (
+              {selectedArticle.content.map((_paragraph, idx) => (
                 <p key={idx} className="bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                  {paragraph}
+                  {t(`resources.articles.${selectedArticle.id}.content.${idx}`)}
                 </p>
               ))}
             </div>
 
             <div className="pt-4 border-t border-[#EDECE8] flex items-center justify-between">
-              <span className="text-xs text-slate-400 italic">Safeguard Educational Series</span>
+              <span className="text-xs text-slate-400 italic">{t('resources.educationalSeries')}</span>
               <button
                 onClick={() => setSelectedArticle(null)}
                 className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition-all cursor-pointer"
               >
-                Close guide
+                {t('resources.closeGuide')}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* MODAL: SUPPORT DIRECTORY DETAILS */}
-      {selectedCategory && (
+      {/* MODAL: SUPPORT DIRECTORY DETAILS — also portaled, same reason. */}
+      {selectedCategory && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white border border-[#EDECE8] rounded-[28px] max-w-lg w-full p-6 sm:p-8 shadow-xl space-y-6">
             <div className="flex items-start justify-between gap-4 border-b border-[#EDECE8] pb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2.5 bg-indigo-50 rounded-xl">{selectedCategory.icon}</div>
                 <div>
-                  <h3 className="text-xl font-extrabold text-slate-900">{selectedCategory.title}</h3>
-                  <span className="text-xs text-slate-500">Resource Information</span>
+                  <h3 className="text-xl font-extrabold text-slate-900">{t(`resources.categories.${selectedCategory.id}.title`)}</h3>
+                  <span className="text-xs text-slate-500">{t('resources.resourceInfo')}</span>
                 </div>
               </div>
 
@@ -576,12 +581,12 @@ export const Resources: React.FC = () => {
 
             <div className="space-y-4 text-xs sm:text-sm text-slate-700">
               <p className="leading-relaxed bg-[#FAF9F6] p-4 rounded-xl border border-[#EDECE8]">
-                {selectedCategory.details}
+                {t(`resources.categories.${selectedCategory.id}.details`)}
               </p>
 
               <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-900 block">
-                  Contact / Referral Directory
+                  {t('resources.contactDirectory')}
                 </span>
                 <p className="font-mono font-bold text-indigo-950 text-xs sm:text-sm">
                   {selectedCategory.contactInfo}
@@ -590,16 +595,17 @@ export const Resources: React.FC = () => {
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <span className="text-[12px] text-slate-400">All contacts are free & confidential</span>
+              <span className="text-[12px] text-slate-400">{t('resources.allContactsFree')}</span>
               <button
                 onClick={() => setSelectedCategory(null)}
                 className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition-all cursor-pointer"
               >
-                Got it
+                {t('resources.gotIt')}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

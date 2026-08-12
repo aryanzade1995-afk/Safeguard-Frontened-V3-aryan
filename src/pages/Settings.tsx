@@ -28,10 +28,12 @@ import { Checkbox } from '../components/ui/Checkbox';
 import { Modal } from '../components/ui/Modal';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { BackButton } from '../components/common/BackButton';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     settings,
     updateSettings,
@@ -88,8 +90,8 @@ export const Settings: React.FC = () => {
 
     if (!res.success) {
       addToast({
-        title: 'Update Failed',
-        description: res.error || 'Could not update your profile. Please try again.',
+        title: t('settings.toast.updateFailedTitle'),
+        description: res.error || t('settings.toast.updateFailedTitle'),
         type: 'warning',
       });
       return;
@@ -97,8 +99,8 @@ export const Settings: React.FC = () => {
 
     setIsEditingAccount(false);
     addToast({
-      title: 'Account Information Updated',
-      description: 'Your profile name has been saved.',
+      title: t('settings.toast.accountUpdatedTitle'),
+      description: t('settings.toast.accountUpdatedDesc'),
       type: 'success',
     });
   };
@@ -106,8 +108,8 @@ export const Settings: React.FC = () => {
   const handleSignOut = async () => {
     await logout();
     addToast({
-      title: 'Signed Out',
-      description: 'You have been signed out.',
+      title: t('settings.toast.signedOutTitle'),
+      description: t('settings.toast.signedOutDesc'),
       type: 'info',
     });
     navigate('/');
@@ -117,15 +119,15 @@ export const Settings: React.FC = () => {
     const res = await signOutEverywhere();
     if (!res.success) {
       addToast({
-        title: 'Could Not Sign Out Everywhere',
-        description: res.error || 'Please try again.',
+        title: t('settings.toast.couldNotSignOutTitle'),
+        description: res.error || t('results.tryAgain'),
         type: 'warning',
       });
       return;
     }
     addToast({
-      title: 'Signed Out of All Devices',
-      description: 'All active sessions, including this one, have been invalidated.',
+      title: t('settings.toast.signedOutAllTitle'),
+      description: t('settings.toast.signedOutAllDesc'),
       type: 'info',
     });
     navigate('/');
@@ -135,8 +137,8 @@ export const Settings: React.FC = () => {
     e.preventDefault();
     if (newPass !== confirmPass) {
       addToast({
-        title: 'Passwords Do Not Match',
-        description: 'Please ensure new password and confirmation match.',
+        title: t('settings.toast.passwordsNoMatchTitle'),
+        description: t('settings.toast.passwordsNoMatchDesc'),
         type: 'warning',
       });
       return;
@@ -150,8 +152,8 @@ export const Settings: React.FC = () => {
     if (!verifyRes.success) {
       setChangingPassword(false);
       addToast({
-        title: 'Current Password Incorrect',
-        description: verifyRes.error || 'Please try again.',
+        title: t('settings.toast.currentPasswordIncorrectTitle'),
+        description: verifyRes.error || t('results.tryAgain'),
         type: 'warning',
       });
       return;
@@ -162,8 +164,8 @@ export const Settings: React.FC = () => {
 
     if (!updateRes.success) {
       addToast({
-        title: 'Update Failed',
-        description: updateRes.error || 'Could not update your password. Please try again.',
+        title: t('settings.toast.updateFailedTitle'),
+        description: updateRes.error || t('settings.toast.updateFailedTitle'),
         type: 'warning',
       });
       return;
@@ -174,8 +176,8 @@ export const Settings: React.FC = () => {
     setNewPass('');
     setConfirmPass('');
     addToast({
-      title: 'Password Updated',
-      description: 'Your password has been successfully changed.',
+      title: t('settings.toast.passwordUpdatedTitle'),
+      description: t('settings.toast.passwordUpdatedDesc'),
       type: 'success',
     });
   };
@@ -186,8 +188,8 @@ export const Settings: React.FC = () => {
       autoClearOnExit: autoClear,
     });
     addToast({
-      title: 'Privacy & Quick Exit Settings Updated',
-      description: 'Saved into local preferences.',
+      title: t('settings.toast.privacySettingsTitle'),
+      description: t('settings.toast.privacySettingsDesc'),
       type: 'success',
     });
   };
@@ -196,8 +198,8 @@ export const Settings: React.FC = () => {
     wipeAllData();
     setIsDeleteDataModalOpen(false);
     addToast({
-      title: 'Assessment Data Deleted',
-      description: 'All local responses and financial uploads have been purged.',
+      title: t('settings.toast.dataDeletedTitle'),
+      description: t('settings.toast.dataDeletedDesc'),
       type: 'info',
     });
   };
@@ -207,9 +209,8 @@ export const Settings: React.FC = () => {
     await logout();
     setIsDeleteAccountModalOpen(false);
     addToast({
-      title: 'Local Data Cleared & Signed Out',
-      description:
-        'Your local assessment data was removed and you were signed out. Contact support to permanently delete your account record.',
+      title: t('settings.toast.accountDeletedTitle'),
+      description: t('settings.toast.accountDeletedDesc'),
       type: 'info',
     });
     navigate('/');
@@ -221,10 +222,10 @@ export const Settings: React.FC = () => {
       {/* Header */}
       <div className="border-b border-stone-200 pb-6 space-y-2">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Settings
+          {t('settings.title')}
         </h1>
         <p className="text-sm sm:text-base text-slate-500">
-          Manage your account, preferences, privacy controls, and security options.
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -236,32 +237,32 @@ export const Settings: React.FC = () => {
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900">ACCOUNT</h2>
-              <p className="text-xs text-slate-500">Account details linked to your Supabase sign-in</p>
+              <h2 className="text-lg font-extrabold text-slate-900">{t('settings.account.title')}</h2>
+              <p className="text-xs text-slate-500">{t('settings.account.subtitle')}</p>
             </div>
           </div>
           <button
             onClick={() => setIsEditingAccount(!isEditingAccount)}
             className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
           >
-            {isEditingAccount ? 'Cancel' : 'Edit details'}
+            {isEditingAccount ? t('settings.account.cancel') : t('settings.account.edit')}
           </button>
         </div>
 
         {isEditingAccount ? (
           <form onSubmit={handleSaveAccount} className="space-y-4 max-w-md">
             <Input
-              label="Full name"
+              label={t('settings.account.fullName')}
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('settings.account.fullName')}
             />
             <Input
-              label="Email"
+              label={t('settings.account.email')}
               type="email"
               value={user?.email || ''}
               disabled
-              helperText="Email is tied to your sign-in and can't be changed here."
+              helperText={t('settings.account.emailHelper')}
             />
             <div className="pt-2 flex items-center space-x-3">
               <button
@@ -269,7 +270,7 @@ export const Settings: React.FC = () => {
                 disabled={savingAccount}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-60"
               >
-                {savingAccount ? 'Saving...' : 'Save changes'}
+                {savingAccount ? t('settings.account.saving') : t('settings.account.saveChanges')}
               </button>
               <button
                 type="button"
@@ -279,7 +280,7 @@ export const Settings: React.FC = () => {
                 }}
                 className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
               >
-                Cancel
+                {t('settings.account.cancel')}
               </button>
             </div>
           </form>
@@ -287,33 +288,33 @@ export const Settings: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Name
+                {t('settings.account.name')}
               </span>
               <div className="text-sm font-bold text-slate-900">{user?.name || '—'}</div>
             </div>
 
             <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Email
+                {t('settings.account.emailLabel')}
               </span>
               <div className="text-sm font-bold text-slate-900 truncate">{user?.email || '—'}</div>
             </div>
 
             <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Verification
+                {t('settings.account.verification')}
               </span>
               {!user ? (
-                <div className="text-sm font-bold text-slate-400">Not signed in</div>
+                <div className="text-sm font-bold text-slate-400">{t('settings.account.notSignedIn')}</div>
               ) : user.emailConfirmed ? (
                 <div className="text-sm font-bold text-emerald-700 flex items-center space-x-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Email verified</span>
+                  <span>{t('settings.account.emailVerified')}</span>
                 </div>
               ) : (
                 <div className="text-sm font-bold text-amber-900 flex items-center space-x-1.5">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Pending verification</span>
+                  <span>{t('settings.account.pendingVerification')}</span>
                 </div>
               )}
             </div>
@@ -324,7 +325,7 @@ export const Settings: React.FC = () => {
                 className="w-full py-3 px-4 bg-white hover:bg-stone-50 border border-stone-200 text-slate-800 font-bold text-xs rounded-2xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
               >
                 <LogOut className="w-4 h-4 text-slate-500" />
-                <span>Sign out</span>
+                <span>{t('settings.account.signOut')}</span>
               </button>
             </div>
           </div>
@@ -338,8 +339,8 @@ export const Settings: React.FC = () => {
             <Sliders className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">PREFERENCES</h2>
-            <p className="text-xs text-slate-500">Notification settings, language, and display style</p>
+            <h2 className="text-lg font-extrabold text-slate-900">{t('settings.preferences.title')}</h2>
+            <p className="text-xs text-slate-500">{t('settings.preferences.subtitle')}</p>
           </div>
         </div>
 
@@ -348,7 +349,7 @@ export const Settings: React.FC = () => {
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
               <Bell className="w-4 h-4 text-indigo-600" />
-              <span>Notification preferences</span>
+              <span>{t('settings.preferences.notificationPrefs')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -361,7 +362,7 @@ export const Settings: React.FC = () => {
                   }
                   className="rounded border-stone-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                 />
-                <span className="text-xs font-bold text-slate-800">Email updates</span>
+                <span className="text-xs font-bold text-slate-800">{t('settings.preferences.emailUpdates')}</span>
               </label>
 
               <label className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center space-x-3 cursor-pointer">
@@ -373,7 +374,7 @@ export const Settings: React.FC = () => {
                   }
                   className="rounded border-stone-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                 />
-                <span className="text-xs font-bold text-slate-800">Session reminders</span>
+                <span className="text-xs font-bold text-slate-800">{t('settings.preferences.sessionReminders')}</span>
               </label>
 
               <label className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center space-x-3 cursor-pointer">
@@ -385,7 +386,7 @@ export const Settings: React.FC = () => {
                   }
                   className="rounded border-stone-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                 />
-                <span className="text-xs font-bold text-slate-800">In-app alerts</span>
+                <span className="text-xs font-bold text-slate-800">{t('settings.preferences.inAppAlerts')}</span>
               </label>
             </div>
           </div>
@@ -395,7 +396,7 @@ export const Settings: React.FC = () => {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-900 flex items-center space-x-2">
                 <Globe className="w-4 h-4 text-indigo-600" />
-                <span>Language</span>
+                <span>{t('settings.preferences.language')}</span>
               </label>
               <select
                 value={language}
@@ -413,7 +414,7 @@ export const Settings: React.FC = () => {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-900 flex items-center space-x-2">
                 <SunMedium className="w-4 h-4 text-indigo-600" />
-                <span>Appearance</span>
+                <span>{t('settings.preferences.appearance')}</span>
               </label>
               <select
                 value={appearance}
@@ -430,9 +431,9 @@ export const Settings: React.FC = () => {
           {/* Discreet Disguise Mode */}
           <div className="pt-2 border-t border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-bold text-slate-900 text-xs">Discreet Disguise Mode</h4>
+              <h4 className="font-bold text-slate-900 text-xs">{t('settings.preferences.discreetTitle')}</h4>
               <p className="text-[12px] text-slate-500">
-                Replaces app logo and title in navigation with generic "Personal Ledger"
+                {t('settings.preferences.discreetDesc')}
               </p>
             </div>
             <button
@@ -444,7 +445,7 @@ export const Settings: React.FC = () => {
               }`}
             >
               {discreetMode ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span>{discreetMode ? 'Restore Safeguard Logo' : 'Enable Header Disguise'}</span>
+              <span>{discreetMode ? t('settings.preferences.restoreLogo') : t('settings.preferences.enableDisguise')}</span>
             </button>
           </div>
         </div>
@@ -457,8 +458,8 @@ export const Settings: React.FC = () => {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">PRIVACY</h2>
-            <p className="text-xs text-slate-500">Access Privacy Center and granular local data controls</p>
+            <h2 className="text-lg font-extrabold text-slate-900">{t('settings.privacy.title')}</h2>
+            <p className="text-xs text-slate-500">{t('settings.privacy.subtitle')}</p>
           </div>
         </div>
 
@@ -471,15 +472,15 @@ export const Settings: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-bold text-base text-white group-hover:text-indigo-200 transition-colors">
-                  Privacy Center
+                  {t('settings.privacy.centerTitle')}
                 </h3>
                 <p className="text-xs text-indigo-200/80">
-                  Understand and control what Safeguard stores, uses, and purges.
+                  {t('settings.privacy.centerDesc')}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-1.5 text-xs font-bold text-indigo-300 group-hover:translate-x-1 transition-transform shrink-0 ml-3">
-              <span>Open Privacy Center</span>
+              <span>{t('settings.privacy.openCenter')}</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
@@ -489,28 +490,28 @@ export const Settings: React.FC = () => {
           {/* Data permissions */}
           <div className="space-y-3 bg-stone-50 border border-stone-200 rounded-2xl p-5">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-              Data permissions
+              {t('settings.privacy.dataPermissions')}
             </h3>
 
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-800">In-memory local parsing</span>
+                <span className="font-bold text-slate-800">{t('settings.privacy.localParsing')}</span>
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
-                  Granted
+                  {t('settings.privacy.granted')}
                 </span>
               </div>
               <p className="text-[12px] text-slate-500 leading-relaxed">
-                Bank statement files are read entirely within browser memory and never uploaded to cloud servers.
+                {t('settings.privacy.localParsingDesc')}
               </p>
 
               <div className="flex items-center justify-between pt-2 border-t border-stone-200">
-                <span className="font-bold text-slate-800">Private Reflection Storage</span>
+                <span className="font-bold text-slate-800">{t('settings.privacy.reflectionStorage')}</span>
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">
-                  Local Session
+                  {t('settings.privacy.localSession')}
                 </span>
               </div>
               <p className="text-[12px] text-slate-500 leading-relaxed">
-                Questionnaire responses are stored locally in your browser's private memory state.
+                {t('settings.privacy.reflectionStorageDesc')}
               </p>
             </div>
           </div>
@@ -519,10 +520,10 @@ export const Settings: React.FC = () => {
           <div className="space-y-3 bg-stone-50 border border-stone-200 rounded-2xl p-5 flex flex-col justify-between">
             <div className="space-y-1">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                Delete data
+                {t('settings.privacy.deleteData')}
               </h3>
               <p className="text-xs text-slate-700 font-medium">
-                Clear all questionnaire responses, statement logs, and result summaries instantly.
+                {t('settings.privacy.deleteDataDesc')}
               </p>
             </div>
 
@@ -531,7 +532,7 @@ export const Settings: React.FC = () => {
               className="py-2.5 px-4 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 font-bold text-xs rounded-xl border border-red-200 transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs mt-2"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete assessment data</span>
+              <span>{t('settings.privacy.deleteAssessmentData')}</span>
             </button>
           </div>
         </div>
@@ -539,8 +540,8 @@ export const Settings: React.FC = () => {
         {/* Quick Exit URL Preferences */}
         <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Quick Exit Redirect URL</span>
-            <span className="text-[11px] text-slate-400">Esc x 2 or button click</span>
+            <span className="text-xs font-bold text-slate-900">{t('settings.privacy.quickExitUrl')}</span>
+            <span className="text-[11px] text-slate-400">{t('settings.privacy.quickExitHint')}</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -554,7 +555,7 @@ export const Settings: React.FC = () => {
               onClick={handleSaveExitSettings}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap"
             >
-              Save URL
+              {t('settings.privacy.saveUrl')}
             </button>
           </div>
         </div>
@@ -567,8 +568,8 @@ export const Settings: React.FC = () => {
             <Lock className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">SECURITY</h2>
-            <p className="text-xs text-slate-500">Sign-in method, active sessions, and multi-device sign out</p>
+            <h2 className="text-lg font-extrabold text-slate-900">{t('settings.security.title')}</h2>
+            <p className="text-xs text-slate-500">{t('settings.security.subtitle')}</p>
           </div>
         </div>
 
@@ -578,14 +579,14 @@ export const Settings: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <KeyRound className="w-4 h-4 text-indigo-600" />
-                <span>Sign-in method</span>
+                <span>{t('settings.security.signInMethod')}</span>
               </div>
               <p className="text-[12px] text-slate-500 leading-relaxed">
                 {!user
-                  ? 'Sign in to see how you access your account.'
+                  ? t('settings.security.signInNoUser')
                   : user.hasPasswordAuth
-                  ? 'Update your account password regularly to keep access safe.'
-                  : "You're signed in with Google — there's no password to manage."}
+                  ? t('settings.security.signInPassword')
+                  : t('settings.security.signInGoogle')}
               </p>
             </div>
 
@@ -594,15 +595,15 @@ export const Settings: React.FC = () => {
                 onClick={() => setIsChangePasswordModalOpen(true)}
                 className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer shadow-xs w-fit"
               >
-                Update password
+                {t('settings.security.updatePassword')}
               </button>
             ) : user ? (
               <span className="text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
-                Google sign-in
+                {t('settings.security.googleSignIn')}
               </span>
             ) : (
               <span className="text-[11px] text-slate-400 bg-stone-100 px-2 py-0.5 rounded-full font-bold inline-block w-fit">
-                Not signed in
+                {t('settings.security.notSignedIn')}
               </span>
             )}
           </div>
@@ -612,17 +613,17 @@ export const Settings: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <Laptop className="w-4 h-4 text-indigo-600" />
-                <span>Active sessions</span>
+                <span>{t('settings.security.activeSessions')}</span>
               </div>
               <div className="text-xs text-slate-700 font-semibold pt-1">
-                Current Browser Session
+                {t('settings.security.currentSession')}
               </div>
               <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold inline-block">
-                Active now
+                {t('settings.security.activeNow')}
               </span>
             </div>
 
-            <span className="text-[11px] text-slate-400">1 session logged</span>
+            <span className="text-[11px] text-slate-400">{t('settings.security.sessionsLogged')}</span>
           </div>
 
           {/* Sign out of all devices card */}
@@ -630,10 +631,10 @@ export const Settings: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                 <LogOut className="w-4 h-4 text-indigo-600" />
-                <span>Sign out of all devices</span>
+                <span>{t('settings.security.signOutAllDevices')}</span>
               </div>
               <p className="text-[12px] text-slate-500 leading-relaxed">
-                Invalidate all active session tokens across other computers or mobile phones.
+                {t('settings.security.signOutAllDesc')}
               </p>
             </div>
 
@@ -641,7 +642,7 @@ export const Settings: React.FC = () => {
               onClick={handleSignOutAllDevices}
               className="py-2 px-3 bg-white hover:bg-stone-50 text-slate-800 font-bold text-xs rounded-xl border border-stone-200 transition-all cursor-pointer shadow-xs"
             >
-              Sign out everywhere
+              {t('settings.security.signOutEverywhere')}
             </button>
           </div>
         </div>
@@ -651,15 +652,15 @@ export const Settings: React.FC = () => {
       <section className="bg-white border border-stone-200 rounded-[24px] p-6 sm:p-8 shadow-xs space-y-4">
         <div className="border-b border-stone-200 pb-3">
           <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-            DANGER ZONE
+            {t('settings.danger.title')}
           </h2>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-stone-50/80 border border-stone-200 rounded-2xl">
           <div className="space-y-1">
-            <h3 className="font-bold text-slate-900 text-sm">Delete account</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t('settings.danger.deleteAccount')}</h3>
             <p className="text-xs text-slate-500">
-              Clear all local assessment data and sign out. Full account removal requires contacting support.
+              {t('settings.danger.deleteAccountDesc')}
             </p>
           </div>
 
@@ -669,7 +670,7 @@ export const Settings: React.FC = () => {
             className="px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 font-bold text-xs rounded-xl border border-red-200 transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 shadow-xs"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete account</span>
+            <span>{t('settings.danger.deleteAccount')}</span>
           </button>
         </div>
       </section>
@@ -678,27 +679,27 @@ export const Settings: React.FC = () => {
       <Modal
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
-        title="Change Password"
-        description="Enter your current and new password."
+        title={t('settings.modals.changePasswordTitle')}
+        description={t('settings.modals.changePasswordDesc')}
       >
         <form onSubmit={handleChangePassword} className="space-y-4">
           <Input
-            label="Current password"
+            label={t('settings.modals.currentPassword')}
             type="password"
             value={currentPass}
             onChange={(e) => setCurrentPass(e.target.value)}
             required
           />
           <Input
-            label="New password"
+            label={t('settings.modals.newPassword')}
             type="password"
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
             required
-            helperText="At least 6 characters."
+            helperText={t('settings.modals.passwordHint')}
           />
           <Input
-            label="Confirm new password"
+            label={t('settings.modals.confirmNewPassword')}
             type="password"
             value={confirmPass}
             onChange={(e) => setConfirmPass(e.target.value)}
@@ -711,14 +712,14 @@ export const Settings: React.FC = () => {
               onClick={() => setIsChangePasswordModalOpen(false)}
               className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
             >
-              Cancel
+              {t('settings.modals.cancel')}
             </button>
             <button
               type="submit"
               disabled={changingPassword}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer disabled:opacity-60"
             >
-              {changingPassword ? 'Updating...' : 'Update Password'}
+              {changingPassword ? t('settings.modals.updating') : t('settings.modals.updatePassword')}
             </button>
           </div>
         </form>
@@ -728,12 +729,12 @@ export const Settings: React.FC = () => {
       <Modal
         isOpen={isDeleteDataModalOpen}
         onClose={() => setIsDeleteDataModalOpen(false)}
-        title="Delete Assessment Data"
-        description="This action clears all local survey choices and uploaded transaction entries."
+        title={t('settings.modals.deleteDataTitle')}
+        description={t('settings.modals.deleteDataDesc')}
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-700 leading-relaxed">
-            Are you sure you want to clear your local assessment data? This will remove all survey answers and statement logs saved in this browser.
+            {t('settings.modals.deleteDataConfirm')}
           </p>
 
           <div className="flex items-center justify-end space-x-3 pt-2">
@@ -742,14 +743,14 @@ export const Settings: React.FC = () => {
               onClick={() => setIsDeleteDataModalOpen(false)}
               className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
             >
-              Cancel
+              {t('settings.modals.cancel')}
             </button>
             <button
               type="button"
               onClick={handleDeleteDataOnly}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl cursor-pointer"
             >
-              Delete Data
+              {t('settings.modals.deleteDataBtn')}
             </button>
           </div>
         </div>
@@ -759,18 +760,16 @@ export const Settings: React.FC = () => {
       <Modal
         isOpen={isDeleteAccountModalOpen}
         onClose={() => setIsDeleteAccountModalOpen(false)}
-        title="Delete Account Confirmation"
-        description="Clear your local assessment data and sign out of this account."
+        title={t('settings.modals.deleteAccountTitle')}
+        description={t('settings.modals.deleteAccountDesc')}
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-700 leading-relaxed">
-            This action clears all reflection questionnaire answers and financial pattern logs stored on this
-            device, then signs you out. It does not permanently delete your account record — contact support for
-            that.
+            {t('settings.modals.deleteAccountConfirm')}
           </p>
 
           <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-[12px] text-slate-600">
-            <strong>Note:</strong> Once cleared, your local data cannot be restored.
+            {t('settings.modals.deleteAccountNote')}
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-2">
@@ -779,14 +778,14 @@ export const Settings: React.FC = () => {
               onClick={() => setIsDeleteAccountModalOpen(false)}
               className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
             >
-              Cancel
+              {t('settings.modals.cancel')}
             </button>
             <button
               type="button"
               onClick={handleDeleteAccountConfirmed}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl cursor-pointer"
             >
-              Clear Data & Sign Out
+              {t('settings.modals.deleteAccountBtn')}
             </button>
           </div>
         </div>

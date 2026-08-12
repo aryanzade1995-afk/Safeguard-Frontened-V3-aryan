@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface BackButtonProps {
   fallbackPath?: string;
@@ -18,10 +19,12 @@ interface BackButtonProps {
 export const BackButton: React.FC<BackButtonProps> = ({
   fallbackPath = '/',
   className = '',
-  label = 'Back',
+  label,
   forceFallback = false,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const resolvedLabel = label ?? t('backButton.label');
 
   const handleBack = () => {
     if (
@@ -42,10 +45,10 @@ export const BackButton: React.FC<BackButtonProps> = ({
         onClick={handleBack}
         type="button"
         className="inline-flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 bg-white hover:bg-[#FAF9F6] border border-[#EDECE8] hover:border-slate-300 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-2xs group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 active:scale-98"
-        aria-label="Go back to previous page"
+        aria-label={t('backButton.aria')}
       >
         <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-slate-900 group-hover:-translate-x-0.5 transition-transform" />
-        <span>{label}</span>
+        <span>{resolvedLabel}</span>
       </button>
     </div>
   );

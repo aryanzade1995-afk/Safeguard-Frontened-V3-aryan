@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
+  AppLanguageCode,
   FinancialPattern,
   Transaction,
   UserSettings,
@@ -175,6 +176,11 @@ interface SafeguardContextType {
   isDemoMode: boolean;
   startDemo: () => void;
   resetDemo: () => void;
+  // Single language selection shared by the website chrome and the chatbot's
+  // `language` request field — always the same value, so the two can never
+  // drift out of sync. Limited to what the backend actually supports.
+  appLanguage: AppLanguageCode;
+  setAppLanguage: (language: AppLanguageCode) => void;
   patterns: FinancialPattern[];
   transactions: Transaction[];
   addTransaction: (tx: Omit<Transaction, 'id'>) => void;
@@ -184,6 +190,8 @@ interface SafeguardContextType {
   setQuestionnaireAnswer: (questionId: string, answer: string) => void;
   triggerQuickExit: () => void;
   wipeAllData: () => void;
+  clearFinancialData: () => void;
+  clearQuestionnaireData: () => void;
   calculatedScore: {
     autonomyIndex: number; // 0 - 100
     vulnerabilityLevel: 'low' | 'moderate' | 'elevated' | 'high';
@@ -199,6 +207,22 @@ const DEFAULT_SETTINGS: UserSettings = {
   analyticsOptOut: true,
   themeStyle: 'default',
 };
+
+// Guards every localStorage read that feeds a useState initializer. These
+// run synchronously during SafeguardProvider's first render (before any
+// error boundary could exist), so a single corrupted value here would
+// otherwise throw uncaught and blank the entire app — this is what actually
+// happened when a stale/malformed key was left over from earlier testing.
+function readJson<T>(key: string, fallback: T): T {
+  const saved = localStorage.getItem(key);
+  if (!saved) return fallback;
+  try {
+    return JSON.parse(saved) as T;
+  } catch {
+    localStorage.removeItem(key);
+    return fallback;
+  }
+}
 
 const SafeguardContext = createContext<SafeguardContextType | undefined>(undefined);
 
@@ -351,10 +375,15 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const signInWithGoogle = async (): Promise<AuthResult> => {
+    // Honor wherever the auth modal was actually opened for (e.g. "Start
+    // privately" sets authRedirectTarget to /assessment) — full-page OAuth
+    // redirects can't read component state after the round trip, so the
+    // target has to be baked into the redirect URL itself.
+    const target = authRedirectTarget || '/dashboard';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}${target}`,
       },
     });
 
@@ -431,13 +460,15 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return { success: true };
   };
 
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    const saved = localStorage.getItem('safeguard_settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-  });
+  const [settings, setSettings] = useState<UserSettings>(() => readJson('safeguard_settings', DEFAULT_SETTINGS));
 
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
     return localStorage.getItem('safeguard_is_demo') === 'true';
+  });
+
+  const [appLanguage, setAppLanguage] = useState<AppLanguageCode>(() => {
+    const saved = localStorage.getItem('safeguard_language');
+    return saved === 'hi' || saved === 'mr' ? saved : 'en';
   });
 
   const [patterns] = useState<FinancialPattern[]>(INITIAL_PATTERNS);
@@ -445,15 +476,13 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const isDemo = localStorage.getItem('safeguard_is_demo') === 'true';
     if (isDemo) return DEMO_TRANSACTIONS;
-    const saved = localStorage.getItem('safeguard_transactions');
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    return readJson('safeguard_transactions', INITIAL_TRANSACTIONS);
   });
 
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>(() => {
     const isDemo = localStorage.getItem('safeguard_is_demo') === 'true';
     if (isDemo) return DEMO_QUESTIONNAIRE_ANSWERS;
-    const saved = localStorage.getItem('safeguard_questionnaire');
-    return saved ? JSON.parse(saved) : {};
+    return readJson('safeguard_questionnaire', {});
   });
 
   const startDemo = () => {
@@ -485,6 +514,10 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('safeguard_questionnaire', JSON.stringify(questionnaireAnswers));
   }, [questionnaireAnswers]);
+
+  useEffect(() => {
+    localStorage.setItem('safeguard_language', appLanguage);
+  }, [appLanguage]);
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
@@ -546,6 +579,25 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(INITIAL_TRANSACTIONS);
     setQuestionnaireAnswers({});
     setSettings(DEFAULT_SETTINGS);
+  };
+
+  // Granular deletions used by the Privacy Center's separate "delete
+  // financial data" / "delete questionnaire responses" actions. Demo mode is
+  // exited on either one — its defining trait is providing fictional data
+  // for both domains, so leaving it on after clearing one would silently
+  // repopulate the just-deleted data on next reload.
+  const clearFinancialData = () => {
+    localStorage.setItem('safeguard_transactions', JSON.stringify(INITIAL_TRANSACTIONS));
+    localStorage.removeItem('safeguard_is_demo');
+    setTransactions(INITIAL_TRANSACTIONS);
+    setIsDemoMode(false);
+  };
+
+  const clearQuestionnaireData = () => {
+    localStorage.setItem('safeguard_questionnaire', JSON.stringify({}));
+    localStorage.removeItem('safeguard_is_demo');
+    setQuestionnaireAnswers({});
+    setIsDemoMode(false);
   };
 
   // Calculate non-diagnostic financial autonomy metric
@@ -621,6 +673,8 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isDemoMode,
         startDemo,
         resetDemo,
+        appLanguage,
+        setAppLanguage,
         patterns: currentPatterns,
         transactions,
         addTransaction,
@@ -630,6 +684,8 @@ export const SafeguardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setQuestionnaireAnswer,
         triggerQuickExit,
         wipeAllData,
+        clearFinancialData,
+        clearQuestionnaireData,
         calculatedScore: calculateAutonomyScore(),
       }}
     >

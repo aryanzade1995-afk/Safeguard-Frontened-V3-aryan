@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -19,21 +19,45 @@ import {
   ShieldAlert,
   HardDrive,
   Info,
-  Play,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { useSafeguard } from '../context/SafeguardContext';
-import { useToast } from '../context/ToastContext';
 import { AmbientLines } from '../components/common/AmbientLines';
-import { HeroWaveField } from '../components/common/HeroWaveField';
+import { ChatbotWidget } from '../components/common/ChatbotWidget';
+import { useInView } from '../hooks/useInView';
+import { useTranslation } from '../hooks/useTranslation';
+
+const FLOW_NODES = [
+  { icon: Wallet, key: 'income' },
+  { icon: FileText, key: 'transactions' },
+  { icon: BarChart2, key: 'patterns' },
+  { icon: HelpCircle, key: 'context' },
+  { icon: Sparkles, key: 'insights' },
+];
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { addToast } = useToast();
-  const { calculatedScore, patterns, transactions, startDemo, isAuthenticated, openAuthModal } = useSafeguard();
+  const { calculatedScore, patterns, transactions, isAuthenticated, openAuthModal } = useSafeguard();
+  const { t } = useTranslation();
   const flaggedCount = transactions.filter((t) => t.flagged).length;
+
+  // One-time sequential reveal of the Income -> ... -> Insights flow nodes
+  // on initial load, illuminating each connecting line as the next step activates.
+  const [activeStep, setActiveStep] = useState(-1);
+  useEffect(() => {
+    const timers = FLOW_NODES.map((_, i) =>
+      window.setTimeout(() => setActiveStep(i), 400 + i * 380)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const howItWorksReveal = useInView<HTMLElement>();
+  const whySafeguardReveal = useInView<HTMLElement>();
+  const privacyReveal = useInView<HTMLElement>();
+  const disclaimerReveal = useInView<HTMLElement>();
+  const toolkitReveal = useInView<HTMLElement>();
 
   const handleStartAssessment = () => {
     if (!isAuthenticated) {
@@ -41,16 +65,6 @@ export const Home: React.FC = () => {
     } else {
       navigate('/assessment');
     }
-  };
-
-  const handleStartDemo = () => {
-    startDemo();
-    addToast({
-      title: 'Demo Mode Activated',
-      description: 'Preloaded 6-month fictional profile (₹45,000 income, Maya Sharma).',
-      type: 'success',
-    });
-    navigate('/financial-data');
   };
 
   const scrollToSection = (id: string) => {
@@ -68,52 +82,55 @@ export const Home: React.FC = () => {
 
       {/* ---------------- HERO SECTION ---------------- */}
       <section className="relative grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-2 pb-8">
-        {/* Data -> Patterns -> Insight flowing wave/particle field, behind content */}
-        <HeroWaveField />
-
         {/* Left Column: Typography & CTAs */}
         <div className="relative z-10 lg:col-span-7 space-y-6 text-left">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-semibold text-indigo-700">
+          <div
+            className="animate-hero-reveal inline-flex items-center space-x-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-semibold text-indigo-700"
+            style={{ animationDelay: '0s' }}
+          >
             <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-            <span>Private & Consent-Based Financial Reflection</span>
+            <span>{t('home.badge')}</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1A1A1A] tracking-tight leading-[1.1]">
-            Understand your financial autonomy.
+          <h1
+            className="animate-hero-reveal text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1A1A1A] tracking-tight leading-[1.1]"
+            style={{ animationDelay: '0.1s' }}
+          >
+            {t('home.headline')}
           </h1>
 
-          <p className="text-base sm:text-lg text-[#6B7280] max-w-2xl leading-relaxed">
-            Safeguard helps you identify unusual financial patterns and reflect on your financial independence through a private, consent-based assessment.
+          <p
+            className="animate-hero-reveal text-base sm:text-lg text-[#6B7280] max-w-2xl leading-relaxed"
+            style={{ animationDelay: '0.2s' }}
+          >
+            {t('home.subtext')}
           </p>
 
-          <p className="text-xs sm:text-sm font-medium text-slate-500 flex items-center space-x-2">
+          <p
+            className="animate-hero-reveal text-xs sm:text-sm font-medium text-slate-500 flex items-center space-x-2"
+            style={{ animationDelay: '0.3s' }}
+          >
             <Lock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-            <span>Your financial data is optional. You stay in control.</span>
+            <span>{t('home.dataOptional')}</span>
           </p>
 
           {/* CTA Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
-              onClick={handleStartDemo}
-              className="w-full sm:w-auto px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-base rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-slate-950 text-slate-950" />
-              <span>Start Demo</span>
-            </button>
-
-            <button
               onClick={handleStartAssessment}
-              className="w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer"
+              className="animate-hero-reveal w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base rounded-xl transition-all shadow-md hover:shadow-[0_8px_24px_rgba(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer"
+              style={{ animationDelay: '0.4s' }}
             >
-              <span>Start privately</span>
+              <span>{t('home.startPrivately')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => scrollToSection('how-it-works')}
-              className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-[#FAF9F6] text-slate-700 font-bold text-base rounded-xl border border-[#EDECE8] transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+              className="animate-hero-reveal w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-[#FAF9F6] text-slate-700 font-bold text-base rounded-xl border border-[#EDECE8] transition-all hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 cursor-pointer flex items-center justify-center space-x-1.5"
+              style={{ animationDelay: '0.56s' }}
             >
-              <span>See how it works</span>
+              <span>{t('home.seeHowItWorks')}</span>
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
           </div>
@@ -125,36 +142,51 @@ export const Home: React.FC = () => {
             {/* Ambient subtle decorative light pill */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
 
+            {/* Soft moving light sweep across the card surface */}
+            <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none">
+              <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg] animate-card-sweep"></div>
+            </div>
+
             {/* Panel Header */}
             <div className="border-b border-[#EDECE8] pb-4">
               <p className="text-[11px] uppercase tracking-widest text-[#9CA3AF] font-bold">
-                How your data becomes insight
+                {t('home.panelEyebrow')}
               </p>
-              <h3 className="text-lg font-bold text-[#1A1A1A] mt-0.5">From raw data to reflection</h3>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mt-0.5">{t('home.panelTitle')}</h3>
             </div>
 
             {/* 5-Node Flow Visual: Income -> Transactions -> Patterns -> Context -> Insights */}
             <div className="space-y-0">
-              {[
-                { icon: Wallet, label: 'Income', desc: 'Your earnings, if you choose to share them' },
-                { icon: FileText, label: 'Transactions', desc: 'Optional statement or CSV data' },
-                { icon: BarChart2, label: 'Patterns', desc: 'Neutral, observational trends' },
-                { icon: HelpCircle, label: 'Context', desc: 'Your voluntary reflection answers' },
-                { icon: Sparkles, label: 'Insights', desc: 'A private, non-diagnostic summary' },
-              ].map((node, idx, arr) => (
-                <div key={node.label} className="flex space-x-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                      <node.icon className="w-4 h-4" />
+              {FLOW_NODES.map((node, idx, arr) => {
+                const isActive = idx <= activeStep;
+                const lineActive = idx + 1 <= activeStep;
+                return (
+                  <div key={node.key} className="flex space-x-4">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 ${
+                          isActive
+                            ? 'bg-indigo-600 text-white shadow-[0_0_14px_rgba(79,70,229,0.45)]'
+                            : 'bg-indigo-50 text-indigo-300'
+                        }`}
+                      >
+                        <node.icon className="w-4 h-4" />
+                      </div>
+                      {idx < arr.length - 1 && (
+                        <div
+                          className={`w-px flex-1 my-1 transition-colors duration-500 ${
+                            lineActive ? 'bg-indigo-400' : 'bg-stone-200'
+                          }`}
+                        ></div>
+                      )}
                     </div>
-                    {idx < arr.length - 1 && <div className="w-px flex-1 bg-stone-200 my-1"></div>}
+                    <div className={idx < arr.length - 1 ? 'pb-5' : ''}>
+                      <span className="text-sm font-bold text-slate-900 block">{t(`home.flow.${node.key}.label`)}</span>
+                      <span className="text-xs text-[#6B7280]">{t(`home.flow.${node.key}.desc`)}</span>
+                    </div>
                   </div>
-                  <div className={idx < arr.length - 1 ? 'pb-5' : ''}>
-                    <span className="text-sm font-bold text-slate-900 block">{node.label}</span>
-                    <span className="text-xs text-[#6B7280]">{node.desc}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
           </div>
@@ -162,164 +194,175 @@ export const Home: React.FC = () => {
       </section>
 
       {/* ---------------- HOW IT WORKS ---------------- */}
-      <section id="how-it-works" className="scroll-mt-24 space-y-12">
+      <section
+        id="how-it-works"
+        ref={howItWorksReveal.ref}
+        className={`scroll-mt-24 space-y-12 ${howItWorksReveal.inView ? 'animate-landing-reveal' : 'opacity-0'}`}
+      >
         <div className="text-center max-w-2xl mx-auto space-y-3">
-          <p className="text-xs uppercase tracking-widest text-indigo-600 font-bold">Simple Process</p>
+          <p className="text-xs uppercase tracking-widest text-indigo-600 font-bold">{t('home.howItWorks.eyebrow')}</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
-            Three steps. Your data. Your choice.
+            {t('home.howItWorks.title')}
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            Safeguard puts you entirely in the driver's seat. Proceed at your own pace with total privacy.
+            {t('home.howItWorks.subtitle')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Step 01 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 hover:-translate-y-1 transition-all">
             <div className="space-y-4">
               <span className="text-4xl font-extrabold text-indigo-600 block">01</span>
               <h3 className="text-xl font-bold text-[#1A1A1A]">
-                Share what you're comfortable sharing
+                {t('home.howItWorks.step1.title')}
               </h3>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                Upload a sample statement, CSV, or continue without financial data.
+                {t('home.howItWorks.step1.desc')}
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-[#EDECE8] text-xs font-semibold text-indigo-600 flex items-center space-x-1">
-              <span>Financial data is always optional</span>
+              <span>{t('home.howItWorks.step1.footer')}</span>
             </div>
           </div>
 
           {/* Step 02 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 hover:-translate-y-1 transition-all">
             <div className="space-y-4">
               <span className="text-4xl font-extrabold text-indigo-600 block">02</span>
               <h3 className="text-xl font-bold text-[#1A1A1A]">
-                Add your context
+                {t('home.howItWorks.step2.title')}
               </h3>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                Answer confidential questions about financial autonomy and control.
+                {t('home.howItWorks.step2.desc')}
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-[#EDECE8] text-xs font-semibold text-indigo-600 flex items-center space-x-1">
-              <span>Multiple choice & skip options</span>
+              <span>{t('home.howItWorks.step2.footer')}</span>
             </div>
           </div>
 
           {/* Step 03 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm flex flex-col justify-between hover:border-indigo-200 hover:-translate-y-1 transition-all">
             <div className="space-y-4">
               <span className="text-4xl font-extrabold text-indigo-600 block">03</span>
               <h3 className="text-xl font-bold text-[#1A1A1A]">
-                Understand the signals
+                {t('home.howItWorks.step3.title')}
               </h3>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                Review patterns and receive an educational risk assessment.
+                {t('home.howItWorks.step3.desc')}
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-[#EDECE8] text-xs font-semibold text-indigo-600 flex items-center space-x-1">
-              <span>Actionable guidance & safety steps</span>
+              <span>{t('home.howItWorks.step3.footer')}</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ---------------- WHY SAFEGUARD ---------------- */}
-      <section className="space-y-10">
+      <section
+        ref={whySafeguardReveal.ref}
+        className={`space-y-10 ${whySafeguardReveal.inView ? 'animate-landing-reveal' : 'opacity-0'}`}
+      >
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1A1A]">
-            Built for reflection, designed for autonomy.
+            {t('home.why.title')}
           </h2>
           <p className="text-sm text-[#6B7280]">
-            Our core principles prioritize human dignity, clarity, and safety over automated judgments.
+            {t('home.why.subtitle')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Card 1 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md hover:-translate-y-1 transition-all">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
               01
             </div>
-            <h3 className="text-xl font-bold text-[#1A1A1A]">Patterns, not accusations</h3>
+            <h3 className="text-xl font-bold text-[#1A1A1A]">{t('home.why.card1.title')}</h3>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              Transaction data can reveal patterns, not intent.
+              {t('home.why.card1.desc')}
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md hover:-translate-y-1 transition-all">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
               02
             </div>
-            <h3 className="text-xl font-bold text-[#1A1A1A]">Consent at every step</h3>
+            <h3 className="text-xl font-bold text-[#1A1A1A]">{t('home.why.card2.title')}</h3>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              You decide what information to provide.
+              {t('home.why.card2.desc')}
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md hover:-translate-y-1 transition-all">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
               03
             </div>
-            <h3 className="text-xl font-bold text-[#1A1A1A]">Private by design</h3>
+            <h3 className="text-xl font-bold text-[#1A1A1A]">{t('home.why.card3.title')}</h3>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              Sensitive information should remain under your control.
+              {t('home.why.card3.desc')}
             </p>
           </div>
 
           {/* Card 4 */}
-          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[#EDECE8] rounded-[24px] p-8 shadow-sm space-y-3 hover:shadow-md hover:-translate-y-1 transition-all">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
               04
             </div>
-            <h3 className="text-xl font-bold text-[#1A1A1A]">Human judgment matters</h3>
+            <h3 className="text-xl font-bold text-[#1A1A1A]">{t('home.why.card4.title')}</h3>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              Safeguard supports reflection—it does not replace professionals.
+              {t('home.why.card4.desc')}
             </p>
           </div>
         </div>
       </section>
 
       {/* ---------------- PRIVACY SECTION ---------------- */}
-      <section id="privacy" className="scroll-mt-24 bg-white border border-[#EDECE8] rounded-[24px] p-8 sm:p-12 shadow-sm relative overflow-hidden">
+      <section
+        id="privacy"
+        ref={privacyReveal.ref}
+        className={`scroll-mt-24 bg-white border border-[#EDECE8] rounded-[24px] p-8 sm:p-12 shadow-sm relative overflow-hidden ${privacyReveal.inView ? 'animate-landing-reveal' : 'opacity-0'}`}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           {/* Left Text */}
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wider">
               <Lock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Privacy Standard</span>
+              <span>{t('home.privacy.badge')}</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1A1A] tracking-tight">
-              Your financial information is yours.
+              {t('home.privacy.title')}
             </h2>
 
             <p className="text-base text-[#6B7280] leading-relaxed">
-              Safeguard is engineered from the ground up to operate completely client-side. We do not store your financial records on remote servers.
+              {t('home.privacy.desc')}
             </p>
 
             {/* 4 Pillars */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EDECE8] space-y-1">
-                <h4 className="font-bold text-slate-900 text-sm">Optional financial data</h4>
-                <p className="text-xs text-[#6B7280]">Complete assessments with or without CSV statement uploads.</p>
+                <h4 className="font-bold text-slate-900 text-sm">{t('home.privacy.pillar1.title')}</h4>
+                <p className="text-xs text-[#6B7280]">{t('home.privacy.pillar1.desc')}</p>
               </div>
 
               <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EDECE8] space-y-1">
-                <h4 className="font-bold text-slate-900 text-sm">Transparent processing</h4>
-                <p className="text-xs text-[#6B7280]">All pattern algorithms run directly inside your browser memory.</p>
+                <h4 className="font-bold text-slate-900 text-sm">{t('home.privacy.pillar2.title')}</h4>
+                <p className="text-xs text-[#6B7280]">{t('home.privacy.pillar2.desc')}</p>
               </div>
 
               <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EDECE8] space-y-1">
-                <h4 className="font-bold text-slate-900 text-sm">User-controlled deletion</h4>
-                <p className="text-xs text-[#6B7280]">Wipe all local session records anytime with a single click.</p>
+                <h4 className="font-bold text-slate-900 text-sm">{t('home.privacy.pillar3.title')}</h4>
+                <p className="text-xs text-[#6B7280]">{t('home.privacy.pillar3.desc')}</p>
               </div>
 
               <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EDECE8] space-y-1">
-                <h4 className="font-bold text-slate-900 text-sm">Secure handling</h4>
-                <p className="text-xs text-[#6B7280]">Includes quick exit and discreet branding mode for safety.</p>
+                <h4 className="font-bold text-slate-900 text-sm">{t('home.privacy.pillar4.title')}</h4>
+                <p className="text-xs text-[#6B7280]">{t('home.privacy.pillar4.desc')}</p>
               </div>
             </div>
           </div>
@@ -353,69 +396,75 @@ export const Home: React.FC = () => {
       </section>
 
       {/* ---------------- IMPORTANT DISCLAIMER ---------------- */}
-      <section className="bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-6 sm:p-8 text-center max-w-4xl mx-auto space-y-2">
+      <section
+        ref={disclaimerReveal.ref}
+        className={`bg-[#FAF9F6] border border-[#EDECE8] rounded-2xl p-6 sm:p-8 text-center max-w-4xl mx-auto space-y-2 ${disclaimerReveal.inView ? 'animate-landing-reveal' : 'opacity-0'}`}
+      >
         <div className="inline-flex items-center space-x-2 text-slate-500 text-xs font-bold uppercase tracking-wider">
           <Info className="w-4 h-4 text-indigo-600" />
-          <span>Educational Disclaimer</span>
+          <span>{t('home.disclaimer.badge')}</span>
         </div>
         <p className="text-sm sm:text-base text-[#6B7280] leading-relaxed max-w-3xl mx-auto">
-          "Safeguard is an educational decision-support tool. It cannot determine whether financial abuse has occurred and cannot identify coercion or intent from transaction data alone."
+          {t('home.disclaimer.text')}
         </p>
       </section>
 
       {/* ---------------- INTERACTIVE APP TOOLKIT BRIDGE ---------------- */}
-      <section className="space-y-6 pt-4">
+      <section
+        ref={toolkitReveal.ref}
+        className={`space-y-6 pt-4 ${toolkitReveal.inView ? 'animate-landing-reveal' : 'opacity-0'}`}
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#EDECE8] pb-4">
           <div>
-            <h3 className="text-2xl font-bold text-[#1A1A1A]">Explore the Interactive Safeguard Toolkit</h3>
+            <h3 className="text-2xl font-bold text-[#1A1A1A]">{t('home.toolkit.title')}</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Select any tool below to begin your private reflection session.
+              {t('home.toolkit.subtitle')}
             </p>
           </div>
           <NavLink to="/assessment">
             <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer">
-              Launch Full Guided Assessment
+              {t('home.toolkit.launchButton')}
             </button>
           </NavLink>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <NavLink to="/assessment" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <HelpCircle className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Guided Assessment</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card1.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Evaluate account access, decision autonomy, emergency fund access, and debt control.
+                  {t('home.toolkit.card1.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>Start Assessment</span>
+                <span>{t('home.toolkit.card1.cta')}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
             </div>
           </NavLink>
 
           <NavLink to="/financial-data" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <PieChart className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Pattern Scanner & CSV</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card2.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Optionally upload CSV files to scan for recurring transfers or credential changes.
+                  {t('home.toolkit.card2.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform inline-flex items-center">
-                  Review Data <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  {t('home.toolkit.card2.cta')} <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </span>
                 {flaggedCount > 0 && (
                   <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[11px] font-bold rounded-full">
-                    {flaggedCount} Flagged
+                    {flaggedCount} {t('home.toolkit.flagged')}
                   </span>
                 )}
               </div>
@@ -423,78 +472,80 @@ export const Home: React.FC = () => {
           </NavLink>
 
           <NavLink to="/questionnaire" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Confidential Survey</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card3.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Answer optional qualitative questions about spending approval and document control.
+                  {t('home.toolkit.card3.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>Start Survey</span>
+                <span>{t('home.toolkit.card3.cta')}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
             </div>
           </NavLink>
 
           <NavLink to="/pattern-analysis" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <BarChart2 className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Pattern Analysis Engine</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card4.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Deep-dive into identified signals, risk factors, and recommended personal precautions.
+                  {t('home.toolkit.card4.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>Analyze Signals</span>
+                <span>{t('home.toolkit.card4.cta')}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
             </div>
           </NavLink>
 
           <NavLink to="/results" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <FileText className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Autonomy Report</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card5.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  View your comprehensive Autonomy Index score, category breakdown, and PDF export option.
+                  {t('home.toolkit.card5.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>View Results</span>
+                <span>{t('home.toolkit.card5.cta')}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
             </div>
           </NavLink>
 
           <NavLink to="/resources" className="group">
-            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 transition-all h-full flex flex-col justify-between">
+            <div className="bg-white border border-[#EDECE8] rounded-[24px] p-6 shadow-sm hover:border-indigo-300 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <BookOpen className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg">Resources & Hotlines</h4>
+                <h4 className="font-bold text-slate-900 text-lg">{t('home.toolkit.card6.title')}</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Access emergency account setup guides, credit protection checklists, and support hotlines.
+                  {t('home.toolkit.card6.desc')}
                 </p>
               </div>
               <div className="mt-4 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>Access Resources</span>
+                <span>{t('home.toolkit.card6.cta')}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
             </div>
           </NavLink>
         </div>
       </section>
+
+      <ChatbotWidget />
     </div>
   );
 };

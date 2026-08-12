@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { useSafeguard } from '../context/SafeguardContext';
 import { useToast } from '../context/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { BackButton } from '../components/common/BackButton';
 
 export const Assessment: React.FC = () => {
+  const { t } = useTranslation();
   // Step 1 = Onboarding & Consent, Step 2 = Data Choice
   const [assessmentStep, setAssessmentStep] = useState<number>(1);
 
@@ -37,24 +39,24 @@ export const Assessment: React.FC = () => {
   const handleDataChoiceSelect = (choice: 'upload' | 'sample' | 'skip') => {
     if (choice === 'upload') {
       addToast({
-        title: 'Redirecting to Statement Upload',
-        description: 'You can upload CSV or bank statement records privately.',
+        title: t('assessment.toast.uploadTitle'),
+        description: t('assessment.toast.uploadDesc'),
         type: 'info',
       });
       navigate('/financial-data');
     } else if (choice === 'sample') {
       startDemo();
       addToast({
-        title: 'Sample Data Loaded',
-        description: 'Continuing with fictional transactions for demonstration.',
+        title: t('assessment.toast.sampleTitle'),
+        description: t('assessment.toast.sampleDesc'),
         type: 'info',
       });
       navigate('/pattern-analysis');
     } else {
       // skip
       addToast({
-        title: 'Questions Only Mode',
-        description: 'Proceeding directly to the autonomy questions.',
+        title: t('assessment.toast.skipTitle'),
+        description: t('assessment.toast.skipDesc'),
         type: 'info',
       });
       navigate('/questionnaire');
@@ -66,7 +68,7 @@ export const Assessment: React.FC = () => {
       {/* Back only — the global navbar already provides Safeguard branding,
           so no second logo header here. */}
       <div className="max-w-3xl mx-auto pb-6 border-b border-[#EDECE8] mb-8">
-        <BackButton fallbackPath="/" />
+        <BackButton fallbackPath="/dashboard" forceFallback />
       </div>
 
       {/* Main Centered Container */}
@@ -74,11 +76,11 @@ export const Assessment: React.FC = () => {
         {/* Step Progress Indicator */}
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-extrabold uppercase tracking-widest text-indigo-600">
-            Step {assessmentStep} of 2
+            {t('assessment.stepOf', { step: String(assessmentStep) })}
           </span>
           <span className="text-xs text-slate-400">
-            {assessmentStep === 1 && 'Consent & Overview'}
-            {assessmentStep === 2 && 'Data Choice'}
+            {assessmentStep === 1 && t('assessment.step1Label')}
+            {assessmentStep === 2 && t('assessment.step2Label')}
           </span>
         </div>
 
@@ -86,9 +88,9 @@ export const Assessment: React.FC = () => {
         {assessmentStep === 1 && (
           <div className="space-y-6">
             <div className="space-y-2">
-              <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">Before we begin</h1>
+              <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">{t('assessment.step1.title')}</h1>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                Safeguard uses optional financial information and your answers to identify patterns that may be relevant to financial autonomy.
+                {t('assessment.step1.subtitle')}
               </p>
             </div>
 
@@ -98,37 +100,23 @@ export const Assessment: React.FC = () => {
                 <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <h3 className="text-lg font-bold text-[#1A1A1A]">Your control comes first</h3>
+                <h3 className="text-lg font-bold text-[#1A1A1A]">{t('assessment.step1.controlTitle')}</h3>
               </div>
 
               <ul className="space-y-3 text-xs sm:text-sm text-slate-700">
-                <li className="flex items-start space-x-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Financial data is optional</span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>You choose what to share</span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>You can stop at any time</span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>You can delete your information</span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Results are informational, not diagnostic</span>
-                </li>
+                {(['0', '1', '2', '3', '4'] as const).map((i) => (
+                  <li key={i} className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>{t(`assessment.step1.points.${i}`)}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
             {/* Consent Section */}
             <div className="bg-[#FAF9F6] border border-[#EDECE8] rounded-[24px] p-6 space-y-4">
               <h4 className="text-xs uppercase tracking-wider font-bold text-slate-500">
-                Consent & Acknowledgement
+                {t('assessment.step1.consentTitle')}
               </h4>
 
               <div className="space-y-3">
@@ -141,7 +129,7 @@ export const Assessment: React.FC = () => {
                     className="mt-1 h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-xs sm:text-sm text-slate-700 leading-snug group-hover:text-slate-900">
-                    I understand how my information may be used for this assessment.
+                    {t('assessment.step1.consent1')}
                   </span>
                 </label>
 
@@ -154,7 +142,7 @@ export const Assessment: React.FC = () => {
                     className="mt-1 h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-xs sm:text-sm text-slate-700 leading-snug group-hover:text-slate-900">
-                    I understand that Safeguard cannot determine whether financial abuse has occurred from financial data alone.
+                    {t('assessment.step1.consent2')}
                   </span>
                 </label>
               </div>
@@ -171,7 +159,7 @@ export const Assessment: React.FC = () => {
                     : 'bg-stone-200 text-stone-400 cursor-not-allowed'
                 }`}
               >
-                <span>Continue</span>
+                <span>{t('assessment.step1.continue')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -183,10 +171,10 @@ export const Assessment: React.FC = () => {
           <div className="space-y-6">
             <div className="space-y-2">
               <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">
-                How would you like to continue?
+                {t('assessment.step2.title')}
               </h1>
               <p className="text-sm text-[#6B7280]">
-                Select how you want to evaluate your financial autonomy.
+                {t('assessment.step2.subtitle')}
               </p>
             </div>
 
@@ -202,10 +190,10 @@ export const Assessment: React.FC = () => {
                 </div>
                 <div className="flex-1 space-y-1">
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    Upload financial data
+                    {t('assessment.step2.upload.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                    I have a bank statement or CSV I'd like to analyze.
+                    {t('assessment.step2.upload.desc')}
                   </p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all self-center" />
@@ -221,10 +209,10 @@ export const Assessment: React.FC = () => {
                 </div>
                 <div className="flex-1 space-y-1">
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    Use sample data
+                    {t('assessment.step2.sample.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                    I want to explore the prototype with fictional transactions.
+                    {t('assessment.step2.sample.desc')}
                   </p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all self-center" />
@@ -240,10 +228,10 @@ export const Assessment: React.FC = () => {
                 </div>
                 <div className="flex-1 space-y-1">
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    Skip financial data
+                    {t('assessment.step2.skip.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                    I'd prefer to answer questions only.
+                    {t('assessment.step2.skip.desc')}
                   </p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all self-center" />
@@ -254,7 +242,7 @@ export const Assessment: React.FC = () => {
             <div className="text-center pt-2">
               <p className="text-xs text-slate-500 flex items-center justify-center space-x-1">
                 <Lock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                <span>You can complete the assessment without sharing any financial data.</span>
+                <span>{t('assessment.step2.reassurance')}</span>
               </p>
             </div>
 
@@ -264,7 +252,7 @@ export const Assessment: React.FC = () => {
                 className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to consent</span>
+                <span>{t('assessment.step2.backToConsent')}</span>
               </button>
             </div>
           </div>

@@ -1,9 +1,11 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const Footer: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const scrollToAnchor = (id: string) => {
     if (window.location.pathname !== '/') {
@@ -30,7 +32,7 @@ export const Footer: React.FC = () => {
             <span className="text-base font-bold text-slate-900 tracking-tight">Safeguard</span>
           </div>
           <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-            A private, consent-based decision-support tool helping individuals understand financial autonomy with local browser processing.
+            {t('footer.tagline')}
           </p>
         </div>
 
@@ -40,35 +42,35 @@ export const Footer: React.FC = () => {
             onClick={() => scrollToAnchor('how-it-works')}
             className="hover:text-slate-900 transition-colors cursor-pointer"
           >
-            How it works
+            {t('footer.howItWorks')}
           </button>
           <button
             onClick={() => scrollToAnchor('privacy')}
             className="hover:text-slate-900 transition-colors cursor-pointer"
           >
-            Privacy
+            {t('footer.privacy')}
           </button>
           <button
             onClick={() => scrollToAnchor('privacy')}
             className="hover:text-slate-900 transition-colors cursor-pointer"
           >
-            Security
+            {t('footer.security')}
           </button>
           <NavLink to="/resources" className="hover:text-slate-900 transition-colors">
-            Resources
+            {t('footer.resources')}
           </NavLink>
           <NavLink to="/settings" className="hover:text-slate-900 transition-colors">
-            Terms
+            {t('footer.terms')}
           </NavLink>
           <NavLink to="/resources" className="hover:text-slate-900 transition-colors">
-            Contact
+            {t('footer.contact')}
           </NavLink>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-[#EDECE8] flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-slate-400">
-        <p>© 2026 Safeguard Project. Educational & Decision-Support Tool. All rights reserved.</p>
-        <p className="italic">Confidential & 100% Client-Side Local Memory</p>
+        <p>{t('footer.copyright')}</p>
+        <p className="italic">{t('footer.confidential')}</p>
       </div>
     </footer>
   );
